@@ -1,0 +1,65 @@
+{
+  "expo": {
+    "name": "Wind & Co.",
+    "slug": "Wind-Co-Closet-App",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FAFAF7"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.windco.closet",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Wind & Co needs camera access to photograph your clothing items and take selfies.",
+        "NSPhotoLibraryUsageDescription": "Wind & Co needs photo library access to import clothing photos.",
+        "NSLocationWhenInUseUsageDescription": "Wind & Co uses your location for weather-based outfit recommendations."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#FAFAF7",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "package": "com.windco.closet",
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-font",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Wind & Co needs camera access to photograph clothing items."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Wind & Co needs photo library access to import clothing photos."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Wind & Co uses your location for weather-based outfit suggestions."
+        }
+      ]
+    ]
+  }
+}

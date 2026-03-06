@@ -1,0 +1,110 @@
+Wind & Co. — Implementation Plan
+Split Across 3 Developers
+
+
+PERSON A (Lead — slightly more work)
+
+Person A owns the data layer and the two most interconnected screens.
+
+1. Build the Data Layer
+   - Define data models for clothing items, outfits, and social log entries
+   - Set up local storage with AsyncStorage so data persists between sessions
+   - Create a global state provider (React Context + useReducer) that all screens read from
+   - Wire up actions: add, update, and delete for items, outfits, and log entries
+
+2. Build the Home Screen
+   - Greeting that changes based on time of day
+   - Weather card that pulls live weather using the device's location
+   - Occasion filter chips (Casual, Work, Formal, Date, etc.) that filter suggested items
+   - "Suggested for You" section — horizontal scroll of clean items matching weather and occasion
+   - "Recent Outfits" section — shows last 3 saved outfits
+   - "Create New Outfit" button that navigates to the Create tab
+
+3. Build the Outfit Builder Screen (Create Tab)
+   - 4 slots: Top, Bottom, Shoes, Accessory
+   - Tap a slot to open a picker showing items from the closet filtered by that category
+   - Use click-to-select (not drag-and-drop — this was a key finding from user testing)
+   - Selected items show as images in their slots forming a visual flat-lay preview
+   - Text input for outfit name
+   - Tag chips for occasion type
+   - Season selector
+   - "Save Outfit" button that adds the outfit to the archive
+   - Clear/reset option
+
+
+PERSON B
+
+Person B owns the closet and everything related to individual clothing items.
+
+1. Build the Closet Screen
+   - Category filter chips along the top: All, Tops, Bottoms, Shoes, Accessories
+   - 2-column grid showing all clothing items with photo, name, and a status dot (green = clean, yellow = dirty, red = in laundry)
+   - Item count displayed in the header
+   - Empty state message when the closet has no items yet
+   - Tapping an item opens the Item Detail screen
+
+2. Build the Add Item Screen
+   - Option to take a photo with the camera or pick from the phone's gallery
+   - Fields: item name, category picker, season tags
+   - Save button that adds the item to the closet
+
+3. Build the Item Detail Screen
+   - Full-size image of the clothing item
+   - Editable fields: name, category, seasons
+   - Status toggle to cycle between clean, dirty, and laundry
+   - Delete button with confirmation
+
+4. Photo Handling
+   - Integrate expo-camera for taking photos
+   - Integrate expo-image-picker for selecting from gallery
+   - Compress and store images locally on the device
+
+
+PERSON C
+
+Person C owns the saved outfits archive and the social history log.
+
+1. Build the Saved Outfits Screen (Archive Tab)
+   - List of all saved outfits displayed as cards with a 2x2 thumbnail grid, name, and tags
+   - Filter by tag and season
+   - Sort options: newest, most worn, favorites only
+   - Outfit count in the header
+   - Tapping a card opens a detail view showing all items in the outfit and its full wear history
+   - "I Wore This" button — styled as a clear, prominent button (not a tag — this was flagged in user testing)
+   - Favorite/unfavorite toggle
+   - Delete outfit option
+
+2. Build the Social History Log Screen (History Tab)
+   - Timeline-style list of past outfit wears sorted by newest first
+   - Each entry shows: date, event name, audience, location, and optional notes
+   - Filter by event, audience, or date range
+   - Tapping an entry shows the outfit that was worn
+   - "Log an Outfit" button at the bottom
+
+3. Build the Add Social Log Screen
+   - Date picker (defaults to today)
+   - Event name input
+   - Event tag picker
+   - Audience selector (multi-select or free text)
+   - Location field
+   - Notes field
+   - Save button that records the entry
+
+
+SHARED / FINAL STEPS (All 3)
+
+1. UI Polish
+   - Smooth transitions and animations
+   - Pull-to-refresh on list screens
+   - Loading states and empty states on every screen
+   - Consistent use of the existing warm-light theme across all new components
+
+2. Device Testing
+   - Test on a real iPhone and Android phone using Expo Go
+   - Verify layout on small and large screen sizes
+   - Confirm camera and location permissions work
+
+3. Release Build
+   - For demo/testing: scan QR code in Expo Go (already works)
+   - For standalone install: run EAS Build to generate an installable app file
+   - For App Store/Play Store: create production build and submit through EAS Submit
