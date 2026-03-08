@@ -1,0 +1,1115 @@
+
+
+
+
+
+Wind & Co. 
+G2 Report: Design Exploration, Prototyping, and Early Evaluation
+Arush Gupta, Vennise Ho, Gaia Micciancio, Prisha Patel, Miral Yousef
+CSC318
+4 March, 2026
+
+
+
+Table of contents
+Design requirements
+Design alternatives and comparison
+Convergence rationale
+Storyboards
+Paper prototype explanation
+Early evaluation methods and findings
+Design implications
+Appendices
+G2 Contribution Report
+
+
+
+Design requirements (brief recap from G1)
+Design Requirement 1: Filtering for Weather & Activity 
+Requirement: The system must filter and prioritize clothing options that satisfy the user’s current weather conditions and scheduled activities for the day.
+Success Metric: This requirement is met if the user can view a selection of clothes already filtered for the day’s weather and events without having to manually check and exclude incompatible items first.
+Design Requirement 2: Visual Outfit Preview
+Requirement: The system must provide a way for users to visually assemble and preview how multiple clothing items look together as a single outfit before they are physically worn.
+Success Metric: This requirement is met if a user can visually verify that multiple pieces (e.g., top, bottom, and shoes) are well coordinated before they physically put any of the items on.
+Design Requirement 3: Availability/Status Tracking
+Requirement: The system must track and display the current availability and cleanliness of clothing items within the user's inventory.
+Success Metric: This requirement is met if the user can identify which items are currently “unavailable” (e.g., in the laundry) before selecting them for an outfit.
+Design Requirement 4: Saved Outfit Archive
+Requirement: The system must allow users to save and quickly retrieve combinations of clothing that have been previously verified as successful.
+Success Metric: This requirement is met if the user can save a coordinated outfit to a personal library and successfully retrieve it for use at a later date.
+Design Requirement 5: Social History Log
+Requirement: The system must record and display the date, social context, and audience associated with previously worn outfits.
+Success Metric: This requirement is met if the user can view the specific date and the social group or event associated with a previously worn outfit.
+
+
+These five requirements collectively define both the logistical and social constraints of getting dressed. In the next section, we explore three distinct design directions that each prioritize different subsets of these requirements, allowing us to reason explicitly about tradeoffs before converging on a single direction.
+Design alternatives and comparison
+Design 1: High-Fidelity Virtual Avatar
+
+Description: This approach uses a personalized 3D avatar that accurately represents the user’s physical proportions and silhouette. Users can “try on” digital versions of their clothing in a virtual environment to see how items work together before physically dressing.
+Advantages:
+Directly Bridges the Visualization Gap: Makes coordination concrete for users who struggle with mental imagery, addressing the “Spatial Cognition Gap” identified in our findings.
+Reduces Physical Friction: Minimizes the need for multiple physical outfit changes, saving time and physical effort during the Trial Phase.
+Disadvantages:
+Implementation Complexity: Accurate 3D modeling of fabric drape and fit poses a high feasibility barrier compared to 2D alternatives.
+Learning Curve: Users may find navigating a 3D interface more time-consuming than traditional mirror-based trials during a rushed morning.
+Requirements Traceability:
+Supports Well: Design Requirement 2 (Visual Outfit Preview).
+Struggles to Support: Design Requirement 1 (Weather/Activity Filtering) and Design Requirement 3 (Laundry/Availability Tracking).
+Design 2: Visual Collage & Timestamped Archive
+
+Description: This approach focuses on a 2D “mood board” approach, allowing users to assemble flat-lay collages and save them to a timestamped library. It leverages existing mental models of social media apps (like Instagram) to track when and where outfits were worn.
+Advantages:
+Low Barrier to Entry: Fits seamlessly into existing user behaviors of taking photos or saving inspiration, making it intuitive to use from day one.
+Social & Recency Verification: The timestamped archive allows users to verify social context, solving “Audience Anxiety” by checking exactly when a group last saw an outfit.
+Disadvantages:
+Manual Upkeep: The system's value depends entirely on the user’s discipline to save and tag outfits; an empty archive provides no utility in a “panic” morning.
+Static Representation: Unlike an avatar, a 2D collage cannot show how an outfit fits the body or how layers interact spatially.
+Requirements Traceability:
+Supports Well: Design Requirement 2 (Visual Outfit Preview), Design Requirement 4 (Saved Outfit Archive), Design Requirement 5 (Social History Log)
+Struggles to Support: Design Requirement 1 (Weather and Activity Filtering) and Design Requirement 3 (Laundry and Availability Tracking)
+Design 3: Context-Aware Inventory Manager
+
+Description: This approach functions as a digital “control center” for the closet, focusing on item status and logistical constraints. It automatically filters the wardrobe based on real-time weather and scheduled events, while tracking which items are currently clean, dirty, or missing.
+Advantages:
+Eliminates "Failed" Selections: Prevents the frustration of choosing an outfit only to find a piece is in the laundry or incompatible with the rain.
+Reduced Cognitive Load: Automatically handles the “mental sorting” and “survival logistics” of weather/activity, allowing users to jump straight to styling.
+Disadvantages:
+High Data Input: Requires users to maintain an accurate digital inventory and sync their calendars to provide meaningful event-based filters.
+Logistical Rigidity: May struggle with nuanced weather (e.g., "it's sunny but windy") or unexpected changes in daily plans that weren't logged in a calendar.
+Requirements Traceability:
+Supports Well: Design Requirement 1 (Weather and Activity Filtering) and Design Requirement 3 (Laundry and Availability Tracking).
+Struggles to Support: Design Requirement 4 (Saved Outfit Archive) as it focuses on individual items rather than coordinated looks.
+
+Convergence rationale
+After evaluating our three alternatives, we have chosen to pursue Design 2: Visual Collage & Timestamped Archive as our primary design direction. This choice is based on how well it addresses the emotional and social friction points found in our research while remaining highly intuitive for the user.
+Comparison Against Requirements 
+Design 2 provides a strong foundation by supporting Design Requirement 2 (Visual Outfit Preview) through the collage feature and Design Requirement 4 (Saved Outfit Archive) via the timestamped library. While Design 1 (Virtual Avatar) offered a high-tech solution for the “Spatial Cognition Gap,” its complexity and lack of historical tracking made it a less versatile starting point.
+Acknowledging Tradeoffs 
+We recognize that Design 2 relies on manual user discipline more than the automated filtering of Design 3 (Context-Aware Inventory Manager). However, our research shows that users value personal expression and “creative spark” over purely logistical dressing. While a manual archive could be empty on first use, it matches existing mental models of some users who already utilize “Instagram archives” to remember their looks. We believe the trade-off of manual upkeep is justified because it removes the mental burden of memorizing past combinations. Instead of relying on memory to ensure variety and social appropriateness, the user can rely on a verified record, significantly reducing morning cognitive load.
+Reasoning for Selection 
+Design 2 hits the most significant pain points of the Trial Phase such the frustration of physically coordinating pieces or remembering if you had worn an outfit in front of some crowd before and the Finalizing Phase (the time-pressed panic that results in boring yet safe outfits). By providing a solution for the morning bottleneck through a verified library of past successes, we can significantly reduce the decision fatigue and physical effort identified in our experience map.
+Future Development 
+Design 2 serves as the best foundation because it captures the creative and social aspects of dressing. We intend to use this as a core that can eventually integrate logistical elements from Design 3, such as automated weather and activity tracking, as the system evolves to become even more context-aware.
+Storyboards
+Part 1: High-Level Storyboards (Context & Workflow) 
+These storyboards focus on the human element: the environment, the user's emotional state, and how the app fits into their physical world to relieve friction.
+Storyboard 1: Beating the Morning Bottleneck 
+Scenario: Timely Tina wakes up late and is incredibly rushed. Instead of her usual routine of trying on and discarding multiple outfits in a panic, she uses the app to instantly pull up a verified, comfortable outfit.
+Grounded In:
+Job Story 4: Selecting from Reliable Outfits.
+Requirement 4: Saved Outfit Archive.
+Design Rationale: We found that 73% of respondents default to "safe" outfits when under time pressure, which often leads to a drop in confidence. This storyboard illustrates the app's core value: replacing the physical trial-and-error and emotional drain of a rushed morning with a quick, digital selection. 
+
+Storyboard 2: Navigating Social Anxiety 
+Scenario: Fabulous Fabrizio is getting ready for a party. He wants to wear a specific statement piece but is anxious because he can't remember if he wore it the last time he hung out with this specific friend group. He checks the app's history to verify he is clear to wear it.
+Grounded In:
+Job Story 5: Tracking Social Context.
+Requirement 5: Social History Log.
+Design Rationale: Participants noted that they do not care about repeating an outfit in a week, but they deeply care if the same audience sees it twice. This storyboard validates the user's social constraints and demonstrates how the timestamped archive acts as a "Social Verification" tool.
+
+Part 2: Screen-Level Storyboards (Detailed Interaction Steps)
+These storyboards zoom in on the device interface, detailing the exact taps, swipes, and UI screens the user navigates to accomplish their goals.
+Storyboard 3: Assembling the Visual Collage 
+Scenario: The user has a bit of free time and wants to plan a new look. They open the "My Closet" tab, drag and drop a top, bottom, and shoes onto the canvas, and then visually verify that they match, and hit "Save" to add it to their archive.
+Grounded In:
+Job Story 3: Visualizing the Outfit.
+Requirement 2: Visual Outfit Preview.
+Design Rationale: Users currently suffer from a "Spatial Cognition Gap" where they cannot mentally visualize how pieces will interact without putting them on their physical bodies. This storyboard maps the specific interaction of building a 2D flat-lay collage. It proves how the interface allows users to verify coordination digitally, saving significant physical effort.
+
+
+
+
+
+Storyboard 4: Filtering for Constraints & Retrieving an Outfit
+Scenario: The user opens the "Outfit Archive" sidebar. They select filters for "Summer" and "School" (or use integrated weather data) to narrow down their saved collages. They tap on a saved outfit to view it and confirm it is their choice for the day.
+Grounded In:
+Job Story 1: Planning for Weather & Events.
+Requirement 1: Filtering for Weather & Activity.
+Design Rationale: Getting dressed is a constraint-first problem, with over 80% of users prioritizing weather and planned activities. This flow demonstrates how users interact with the archive sidebar to bypass manual mental sorting. By filtering their pre-verified outfits, users can make a highly efficient, confidence-boosting choice in seconds.
+
+
+
+Storyboard 5: The Post-Wear Social Log (Gaia)
+Scenario: At the end of the day, the user receives a prompt or opens the app to log the outfit they just wore. They tag the date, the event, and the audience, officially saving this data to the outfit's history.
+Grounded In:
+Job Story 5: Tracking Social Context.
+Requirement 5: Social History Log.
+Design Rationale: Because Design 2 heavily relies on manual user discipline to maintain the archive, the interaction for logging social data must be frictionless. This storyboard focuses on the critical data-entry step that powers the "Social & Recency Verification" feature. It shows how a user effortlessly records social context so it can be reliably referenced in the future.
+
+
+
+
+
+Storyboard 6: Catalog, Timestamping, Tracking
+Scenario: User views their catalog of saved outfits. They can see when they wore them in the past, or log the fact that they wore them. They can tag the date, the event, and the audience, officially saving this data to the outfit's history.
+Grounded In:
+Job Story 5: Tracking Social Context.
+Requirement 5: Social History Log.
+Design Rationale: Because Design 2 heavily relies on manual user discipline to maintain the archive, the interaction for logging social data must be frictionless. This storyboard focuses on the critical data-entry step that powers the "Social & Recency Verification" feature. It shows how a user effortlessly records social context so it can be reliably referenced in the future.
+
+
+
+
+
+
+
+
+
+
+Paper Prototype Explanation
+Building on our selected design direction (Design 2: Visual Collage & Timestamped Archive), we developed a low-fidelity paper prototype to simulate the full interaction flow of assembling, saving, retrieving, and logging outfits. The prototype operationalizes the tasks defined in our storyboards and allows users to move through the system as they would in a mobile application. A short demonstration video (linked here: Paper Prototype Demonstration) illustrates the states and transitions described below.
+Navigation and Archive Access
+The prototype begins at a home page containing a “My Closet” button. Selecting this button transitions the user to the catalogue page, which displays previously saved outfits as complete visual collages. This implements the archive-centered structure shown in the high-level storyboards, where users can quickly retrieve verified outfits during time-pressured scenarios.
+Creating a New Outfit (Visual Collage – Storyboard 3)
+From the catalogue page, users can click the “New Outfit” button to enter the closet view. The closet page displays all clothing items in the user’s inventory. Items can be filtered based on weather, colour, and other attributes, reflecting the constraint-based filtering described in the screen-level storyboard.
+Users can then drag and drop clothing items onto a designated collage area to assemble an outfit visually. Once satisfied, they click the “Save” button. Upon saving, the newly assembled outfit appears in the catalogue as a complete look. This interaction directly supports the Visual Outfit Preview requirement by allowing users to coordinate pieces digitally before physically dressing.
+Viewing and Verifying an Outfit (Storyboard 4)
+From the catalogue page, users can click on any saved outfit to enter a large-view mode. In this view, the outfit is displayed prominently, and users can review contextual history information, including when it was previously worn, the event, and the associated audience. This supports efficient retrieval and verification during the morning bottleneck scenario.
+Logging Social Context (Storyboards 5 & 6)
+In large-view mode, users can click the “I wore this” button to log a new wear instance. This transitions to a logging page where users can:
+Modify the date
+Select or create an event
+Select or create an audience
+When setting an event, users can assign a default audience (e.g., a specific class and classmates), streamlining repeated logging for recurring contexts. After saving, the outfit’s history updates to include the new entry, reinforcing the system’s function as a social verification tool.
+Adding New Clothing Items
+Within the closet page, users can click a “+” button to add new clothing items. The system prompts them to take a photo or select an existing image. The prototype simulates automatic detection of clothing pieces within the image, allowing users to confirm and add those pieces to their digital closet. Once added, returning to the closet view shows the new items available for outfit creation.
+Together, these flows demonstrate the full lifecycle of outfit planning, saving, retrieving, and logging within the system.
+Key Design Decisions and Rationale
+Archive-Centered Structure
+The catalogue of saved outfits functions as the system’s anchor. Rather than prioritizing raw inventory, the design centers on complete, verified outfits. This reinforces the goal of reducing decision fatigue by allowing users to rely on previously successful combinations.
+Drag-and-Drop Visual Collage
+The drag-and-drop interaction was chosen to mirror the physical act of laying out clothes and visually assembling a look. This was intended to bridge the gap between mental visualization and physical trial, aligning with the Visual Outfit Preview requirement.
+Integrated Social Logging
+Logging wear history directly from the outfit’s large-view page ensures that social tracking remains tied to specific outfit combinations rather than individual items. This preserves the contextual integrity of the Social History Log requirement.
+Event-Based Audience Defaults
+Allowing events to carry default audiences reflects real-world patterns where certain social contexts involve consistent groups of people. This design choice reduces repetitive data entry while preserving user control.
+Advantages of the Current Prototype
+End-to-End Task Coverage
+The prototype successfully simulates the complete interaction cycle—from creating an outfit to logging its wear—allowing meaningful early evaluation of the chosen design direction.
+Clear Social Verification Mechanism
+The visible history log in large-view mode makes repetition tracking explicit, directly addressing user anxiety around social outfit reuse.
+Structured yet Flexible Filtering
+Filtering within the closet page allows users to narrow options based on constraints without eliminating creative freedom during collage assembly.
+Limitations of the Current Prototype
+Simplified Representation of Automated Detection
+The clothing detection feature is simulated in the paper prototype and does not reflect the technical complexity of real-world image recognition, limiting realism during evaluation.
+Limited Item-Level Interaction
+The prototype does not include a dedicated view mode for individual clothing items. Users can only interact with items within the context of full outfits, which limits exploration and item-specific editing.
+
+
+No Outfit Editing After Saving
+ Once an outfit is saved to the catalogue, there is no mechanism to modify or swap individual components. This restricts flexibility and may require users to recreate an outfit from scratch if small adjustments are needed.
+
+
+Restricted Outfit Structure
+ The collage system assumes one top, one bottom, and one pair of shoes. There is no support for layering or adding accessories, which limits the representation of more complex outfits.
+
+
+Limited Metadata and Manual Input Options
+ The prototype does not allow users to manually add or edit detailed information about clothing items (e.g., material, weather suitability). Additionally, if automatic photo-based detection fails to recognize an item, there is no fallback mechanism for manual entry.
+
+
+
+
+
+
+
+
+
+Early evaluation methods and findings
+For the evaluation methods we chose to do heuristic evaluations with our classmates acting as experts, and think-aloud evaluations with target users. For the heuristic evaluation, we used Nielsen’s 10 Usability Heuristics, collecting a log of usability problems categorized by Heuristic Number and Severity Rank (0–4) and any qualitative notes from the experts on issues or places to improve (See Appendices A, B and C). We had 5 classmates acting as expert evaluators. Since they are familiar with UX standards and Nielsen’s Heuristics, they could objectively catch system flaws—like missing "emergency exits" or inconsistent labels—that we might have missed because we are too close to the design. For the think-aloud evaluations, we looked for 4–6 university students (ages 18–25) who regularly deal with outfit creation in the morning (See Appendices D and E). We needed to see if our collage and archive logic actually felt intuitive to them and if it successfully offloads the mental burden of remembering past outfits. We found participants through our questionnaire from G1, and by scouting students in study spaces who seemed interested in fashion, and conducted 4 interviews. Our note takers collected verbal “stream-of-consciousness” feedback, task completion rates, and events where users got stuck or confused. This data shows us where the user's mental model doesn't match our design and whether the app actually reduces their cognitive load.
+These evaluations were designed to test whether the implemented prototype meaningfully supported our core design requirements—particularly Visual Outfit Preview (Requirement 2), Saved Outfit Archive (Requirement 4), and Social History Log (Requirement 5)—and whether the interaction flows defined in our storyboards reduced cognitive and social friction as intended.
+Finding 1: The “drag and drop” interaction when building outfits in their closet
+Observation 
+Across multiple evaluation sessions, participants consistently struggled with the “drag and drop” functionality used to build outfits in the closet. During the heuristic evaluation (Round 3), evaluators noted confusion about the drag and drop option (violating H9: Help Recognize/Recover from Errors and H10: Help and Documentation). This was echoed in the think-aloud sessions (Rounds 1, 2, and 4), where users paused, became confused, or tried to click placeholders and preexisting clothing items instead of dragging and dropping them.
+Interpretation 
+A core design goal of this app is to reduce the friction people face when trying on multiple outfits. The “drag and drop” mechanism was designed to emulate real-life planning (Nielsen's H2: Match between system and real world) where people take their clothes and arrange them in their room, but it actually introduced more friction because it clashed with users’ standard mental models for mobile interfaces. Users intuitively expected a tap-to-select or tap-to-swap interaction. This friction directly affects Requirement 2 (Visual Outfit Preview), as difficulty assembling outfits undermines the system’s ability to reduce physical and cognitive effort during outfit planning.
+Why it matters / Design Implication 
+Because outfit creation is the primary task of the app, any friction here is a major barrier. In the next iteration, the design should pivot away from drag-and-drop toward a more standard mobile interaction pattern, such as automatically placing the clothes in the outfit box on click.
+
+
+Finding 2: Clarity of system design (friction in basic navigation)
+Observation 
+Users experienced significant friction when trying to figure out how to log an outfit. In the heuristic evaluation (Round 3), an expert noted that in view mode, the “I wore this” button looked like an unclickable tag rather than an actionable button (violating H4: Consistency and Standards). In both the heuristic evaluation and the think-aloud sessions, users paused at the “history”, unsure if it and its contents were clickable. Additionally, they appeared confused by the “history,” as its purpose was not immediately apparent and they had to explore its functionality to understand what it did. In the heuristic evaluation (Round 2, Round 5), experts noted it would be useful to have more information on existing data, such as the amount of clothing or the amount of outfits (Violating H8: Aesthetic and Minimalist Design and H1: Visibility of System Status).
+Interpretation
+A secondary design goal of the app is to successfully “offload the mental burden of remembering past outfits”. To achieve this, logging a daily outfit and viewing past logs needs to be instantaneous and obvious. When calls-to-action like "I wore this" blend in as tags, or the “history” requires exploration just to understand its purpose, users experience unnecessary cognitive load trying to navigate the app. This friction in basic navigation directly undermines the app's core purpose of making outfit tracking effortless. Having information like easy to find outfit counts, further reduces mental load and saves users time.  Because social logging supports Requirement 5 (Social History Log), any ambiguity in this flow weakens the system’s ability to reliably function as a social verification tool.
+Why it matters / Design Implication 
+The findings suggest that the chosen visual cues, terminology, and workflows are failing to guide the user intuitively. For the next iteration, the UI needs clearer signifiers—specifically ensuring that actionable items like buttons look distinctly clickable and do not resemble static tags. Terminology must also be refined to be more representative of the intended action so users do not have to guess the purpose of features like the “history”. 
+
+
+Finding 3: Flexibility in use 
+Observation
+Evaluators noted several moments in which they may have wanted to execute a process differently, or view information in a different way. In the heuristic evaluation (Round 4) an evaluator noted that the “Daily Recap” took a lot of steps and time to input information (Violating H2: Match Between System and Real World and H7: Flexibility and Efficiency of Use). In Round 2, the evaluator noted a desire for an “add all” button so they could more quickly add clothing to their closet (Violating H7: Flexibility and Efficiency of Use). In Round 5, the evaluator noted that events may pile up and lead to inefficiency of scrolling and searching for events (Violating H7: Flexibility and Efficiency of Use). In the think-aloud sessions, users noted desire for different ways of viewing several types of information, for example seeing the closet sorted by date (Round 1), wanting to be able to layer or add accessories (Round 1, Round 2), changing a part of a preexisting outfit (Round 2), to have preselects in their closet (Round 4), have edit and view next to each other (Round 4).
+Interpretation
+There are different ways in which users may want to view information and use the app that depend on their schedule, stress levels, time, style, and the type of person that they are. Being able to view information and execute processes in a more personally intuitive way contributes to our goal of reducing mental load in choosing outfits, as they can do it in a way that more accurately mimics how they might do it in person (but without taking up the same amount of time). It also helps them remember who they wore an outfit in front of (one of our design directions) better if they can view it in a way that makes more sense for them (calendar, recency, date, etc.).  These limitations also affect Requirement 4 (Saved Outfit Archive), as inflexible viewing and logging structures may discourage consistent long-term use of the archive.
+Why it matters / Design Implication: 
+The findings suggest that the design is failing to most efficiently and effectively help users accomplish their goals on the app. In future implementations, there should be more flexibility in use, where users can specify how they would like to view information, and processes should have simplification options for users who don’t want to log as much information. 
+
+
+
+
+
+
+
+Design implications
+Chosen Design Direction
+Our design direction focuses on reducing the friction people encounter when trying on multiple outfits in the morning and reducing the mental burden of remembering outfits and if they’ve worn it in front of specific people. While the early evaluation methods suggest that these goals resonate with users, our current design has not been as effective as we had hoped in achieving that goal. Instead of streamlining the experience, elements of our design such as unclear buttons and user flows that require more steps than necessary are increasing cognitive effort and making tasks feel more complicated than they should be. Moving forward, we will be shifting toward a more automated, yet flexible approach that aligns with familiar mobile-standard interactions. The default experience should simplify and automate the workflow, minimizing manual effort for common tasks. At the same time, users with more specific needs should be able to adjust or override these defaults, ensuring flexibility without increasing cognitive load for everyone. These implications are derived directly from the usability breakdowns observed during evaluation and reflect where the current prototype diverged from our intended design goals.
+
+
+Changes to be made in the next iteration
+The following changes address specific friction points identified across both heuristic and think-aloud evaluations. 
+Based on our evaluation findings, here are the key changes we plan to implement in the next iteration of our design:
+Replace drag-and-drop with click-to-select interactions: Drag-and-drop caused unnecessary confusion when building an outfit. Instead, clicking an item should automatically place it into the outfit box, following familiar mobile interaction patterns.
+Clarify buttons and terminology: Some actions were not clearly distinguishable from unclickable labels. For example, “I wore this” should feel like an obvious action, and “history” should better reflect what the feature actually does for easier navigation of the system.
+Make system status more visible: Displaying data such as clothing counts or total outfits provides users with immediate, useful information about the current state of their digital closet.
+Improve event management in the scroll view: Users should be able to delete events or reorder them (by recency, popularity, or day) so the feed doesn’t become overwhelming or cluttered.
+Introduce a simplified Daily Recap option: Not every user wants to navigate multiple steps just to log an outfit. A streamlined, optional fast-track version reduces friction, while keeping the full manual flow available for users who prefer more control.
+Add an “add all” option for clothing uploads: When multiple items are detected in one photo, users should be able to add them all at once instead of confirming each individually.
+Enable filtering and flexible viewing options: Instead of forcing users to scroll through a chronological feed, they should be able to filter by date, audience, and event and switch between views like calendar or recency-based sorting.
+Support layering and accessories: Users expressed interest in building more complex outfits, such as adding multiple tops or accessories, so the system should support that flexibility.
+Add smart preselects and automatic filters: Instead of requiring users to manually narrow down their closet every time, the system should automatically apply filters based on context (i.e. weather conditions) or generate a randomized preselect of suitable items to reduce mental effort.
+Place “edit” and “view” side-by-side: These actions are often used together, so positioning them next to each other makes the flow more intuitive.
+
+
+Reflection on Limitations and Uncertainty
+While these evaluations provided actionable insights, several limitations in our methodology introduce uncertainty into our findings and affect our overall confidence in the current design direction.
+Lack of Consensus and Incomplete Data in Heuristic Evaluations
+There was a notable lack of consensus among our expert evaluators, with “drag and drop” being the only issue consistently identified across multiple sheets. Furthermore, experts frequently didn’t add enough detail to the heuristic evaluation forms as they tested, leading to gaps in our formal data. This inconsistency means some usability issues may have been missed or overemphasized based on the specific evaluator's focus.
+Potential Observer Bias
+Much of our observational data was recorded from the perspective of team members who have worked extensively on the project. This familiarity may have led to a biased interpretation of user pauses or errors, potentially overlooking fundamental flaws that a neutral observer would have caught.
+Small Sample Size and Low Participant Engagement
+Our think-aloud sessions were limited by a small number of participants who provided relatively few verbal comments. This lack of “stream-of-consciousness” data makes it difficult to definitively map out the user's mental model or understand exactly why certain friction points occurred beyond what we could observe visually.
+
+Appendices
+Appendix A: Heuristic Evaluation Protocol and Tasks 
+Appendix B: Heuristic Evaluation Instruments 
+Appendix C: Heuristic Evaluation Raw Data 
+Appendix D: Think Aloud Protocol and Tasks 
+Appendix E: Think Aloud Raw Data 
+
+Appendix A: Heuristic Evaluation Protocol and Tasks
+
+
+ROLE / MISSING
+Miral
+Prisha
+Gaia
+Arush
+Vennise
+Computer 1
+Prisha
+Miral
+Miral
+Miral
+Miral
+Computer 2
+Arush
+Arush
+Prisha
+Prisha
+Prisha
+Facilitator
+Gaia
+Gaia
+Arush
+Gaia
+Gaia
+Notetaker
+Vennise
+Vennise
+Vennise
+Vennise
+Arush
+
+
+
+Script:
+Hi! Thanks so much for lending your expertise to our project. As a reminder, we are working within the problem space of getting dressed. We’re concentrating on reducing the friction people face when they have to try on multiple outfits in the morning and remembering past outfits and who they wore them in front of. We want you to evaluate our interface against Nielsen’s Usability Heuristics, which we’ve provided for you to review and reference. For each problem we want you to provide a severity ranking from 0-4, where 0 is no problem, 1 is a cosmetic fix, 2 is a low priority fix, 3 is a major usability issue, and 4 is a catastrophe. These numbers are also provided for you as a reminder. For this evaluation, I’ll be your facilitator, BLANK and BLANK will be acting as the computer and BLANK will be taking notes. We want you to find any usability problems. Please act as a user, but bring your expert perspective into your evaluation. We can start with a walkthrough to get a general feel and then do a second walkthrough to identify problems. We’ve provided a blank table to fill out, though you don’t have to fill out 10 problems, and if you need more space please let me know and I can provide additional paper. Feel free to pause to take notes whenever you want. Thanks again for being here, we’ll get started now. 
+
+
+Who participates and why:
+5 classmates acting as expert evaluators. Since they are familiar with UX standards and Nielsen’s Heuristics, they can objectively catch system flaws—like missing "emergency exits" or inconsistent labels—that we might have missed because we are too close to the design.
+
+
+Type of Data Collected:
+A log of usability problems categorized by Heuristic Number and Severity Rank (0–4). Any qualitative notes from the experts on issues or places to improve. 
+
+
+
+
+Appendix B: Heuristic Evaluation Instruments
+Nielsen’s Heuristics:
+
+H1	Visibility of System Status 
+Keep users informed about the system's current state with timely and appropriate feedback.
+H2	Match Between System and Real World 
+Use familiar language and real-world conventions rather than technical jargon.
+H3	User Control and Freedom 
+Provide exits to undo actions. Support autonomy through customization and opt-out choices.
+H4	Consistency and Standards 
+Follow industry and platform conventions so users aren’t confused by varying terms/actions.
+H5	Error Prevention 
+Prevent slips/mistakes before they happen, or ask for confirmation for high-stakes actions.
+H6	Recognition Rather Than Recall 
+Make information/actions visible so users don’t have to remember details from one screen to the next.
+H7	Flexibility and Efficiency of Use 
+Provide shortcuts for frequent actions to help expert users work more quickly.
+H8	Aesthetic and Minimalist Design 
+Keep the interface clean and focused by removing irrelevant or rarely used information.
+H9	Help Recognize/Recover from Errors 
+Use plain language for error messages. Clearly state the problem. Suggest a direct solution.
+H10	Help and Documentation 
+Ensure necessary help content is easy to search and focused on the user’s specific tasks.
+
+
+
+Severity Ranking
+
+
+
+0 	Not a usability problem
+Action: none
+1	Cosmetic problem
+Action: fix if time available
+2 	Minor usability problem
+Action: low priority fix
+
+
+3 	Major usability problem
+Action: high priority fix
+4 	Usability Catastrophe
+Action: must fix before release
+
+
+
+
+#
+
+Problem
+Severity Ranking
+Heuristic Number
+
+Broad Heuristic
+1
+
+
+
+
+
+
+
+
+2
+
+
+
+
+
+
+
+
+3
+
+
+
+
+
+
+
+
+4
+
+
+
+
+
+
+
+
+5
+
+
+
+
+
+
+
+
+6
+
+
+
+
+
+
+
+
+7
+
+
+
+
+
+
+
+
+8
+
+
+
+
+
+
+
+
+9
+
+
+
+
+
+
+
+
+10
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Appendix C: Heuristic Evaluation Raw Data
+ROUND 1
+Problem spots (Places when paused)
+Paused a little bit when looking at what to do??
+Catalog filter button under construction
+Paused on log ui
+Saved an outfit with 2 items (should we allow this)?
+
+
+Phrases said out loud
+ “Do you make a outfit based on a day”
+“It could be easy to close the outfit builder easily removing my progress”
+
+
+Questions asked
+asked question about log ui and what he can do with it
+Asked questions about the purpose of log ui?
+
+
+
+
+
+#
+Problem
+Severity Ranking
+Heuristic number
+Broad heuristic
+1
+App interface cluttering
+1
+H8
+minimalistic
+2
+Emulating real life planning
+2
+H2
+usefulness
+3
+Knowledgeable of every feature
+3
+H10
+App domain knowledge
+
+
+
+ROUND 2
+Problem spots (Places when paused)
+Clicked the top placeholder (ui error)
+When creating a new outfit, assumed drag and drop was a click
+Clicked catalog filter button (under const)
+Paused and confused about event creation
+Automatic audience? Vs chosen audience
+Not intuitive that we can add outfit not already in closet
+Clicked edit for the clothing item after adding it (under const)
+Did not know they could click multiple to add on new outfit button
+Saved outfit with 1 item (should we allow this??)
+Warning message 
+Give outfit a name?
+
+
+Phrases said out loud
+“Having an add all button -> during adding new clothing items
+“No save screen” on filters for closet
+“Maybe a warning message”
+
+
+Questions asked
+Wasn’t sure about what she could do with the app but i think that’s just part of exploration
+Needed to be told
+Filters button of new outfit section
+
+
+
+
+
+#
+Problem
+Severity Ranking
+Heuristic number
+Broad heuristic
+1
+Add new outfit - button: “add all” is more intuitive
+2
+H7
+efficiency
+2
+For filters, no back/exit/save or exit window screen
+3
+H3, H7
+
+
+3
+Warning message - incomplete outfit
+1
+H5
+
+
+4
+Number of outfits indicator
+1
+H1
+
+
+
+
+
+ROUND 3
+Problem spots (Places when paused)
+Closet: confused what to do here → maybe want to have a subheading where we tell them what to do? Or arrows or something
+Tags: not clickable
+
+
+Phrases said out loud
+So this works like i take a picture and it auto-figures out what i’m wearing
+History: so it’s just to look at
+
+
+Questions asked
+Is this based off how I view it or a specific personality?
+Is catalogue previous ones that I set? → add subheader? (your saved outfits)
+History: Is this what other people wore? 
+
+
+Needed to be told 
+I wore this today
+Filters screen	
+
+
+#
+Problem
+Severity Ranking
+Heuristic number
+Broad heuristic
+1
+Confusion about drag and drop option in closet
+2
+H9 / H10
+Confused about interface
+2
+Might be confused at first about where to click to enter the section for catalogue
+2
+H2
+interface
+3
+For view mode, I thought “I wore this” was a tag and not a selectable
+2
+H4
+interface
+4
+[+] and drop down list seem redundant
+2
+H8
+Minimalist design
+
+
+
+
+
+
+ROUND 4
+Problem spots (Places when paused)
+Clicked edit and then immediately went to new outfit → doesn’t know they can click on outfits themselves? Nope figured it out
+Drag + drop in closet → doesn’t know
+Add photo: Not clothes → error message
+Needed clarification about audience
+
+
+Phrases said out loud
+‘Click on it and see details’
+‘Measurements for users’ → sizes may change year by year
+‘Add new event would initially come up with nothing’ 
+Maybe only in add new clothes + daily recap + edit clothing items??
+Daily recap: Enter by voice, language, ability to edit daily recap
+
+
+Questions asked
+Can I save without pants?
+
+
+Needed to be told 
+Add clothes to your closet (via photo) → knew exactly where to go but needed to be told of functionality
+filters
+
+
+Note during round 4: 
+Maybe add shortcuts:
+Bottom bar w adding new clothes, catalogue view, browse my closet/new outfit
+
+
+
+#
+Problem
+Severity Ranking
+Heuristic number
+Broad heuristic
+1
+Cannot edit clothes after adding them
+
+Filter’s tags/events: when adding new events, it cannot update to the existing clothes
+2-3
+H2
+
+
+2
+Takes a lot of steps/time to input information in Daily Recap
+3
+H2, H7
+
+
+3
+Updated information / measurements is lack for change fitting
+3
+H2, H7
+
+
+
+
+
+
+
+ROUND 5
+Problem spots (Places when paused)
+Click and drag for closet
+Selected not an outfit from gallery → needs error msg
+No login process
+Many tags, eventually have to scroll through soooo much → tag categories?
+
+
+Phrases said out loud
+Closet: ‘I guess this is all the outfits I have’
+Carousel: “What are these” → referring to the arrows
+Tags: “are these buttons I can click”
+
+
+Questions asked
+“If I switch phones would my outfits still be there?” → need login / saving fn 
+“Are the photos from the photo gallery app” 
+“How do events work” → more like category of events, maybe need clarification on what events/tags are
+
+
+Needed to be told 
+Adding clothes to closet
+
+
+Notes during round 5:
+Saved outfits folders?
+
+
+
+
+#
+Problem
+Severity Ranking
+Heuristic number
+Broad heuristic
+1
+Clogging of future events
+1
+H7
+
+
+2
+Login on different accounts
+3
+H1
+
+
+3
+Amount of clothes
+1
+H8
+
+
+
+
+
+
+
+
+
+Appendix D: Think Aloud Protocol and Tasks
+Tasks:
+Make a new outfit and save it → should we ask about different temps or just her inner thoughts as if she was creating it in the morning
+Log that you wore an outfit 
+Trying to add something to closet
+Script:
+Hi! Thanks so much for taking the time to join us today. We’re working on building an app that helps people get dressed. We’re concentrating on reducing the friction people face when they have to try on multiple outfits in the morning and remembering past outfits and who they wore them in front of. What you can see is a paper prototype of the app which we’d like you to experiment with. Once we start, I’ll stop talking and we ask that you talk aloud about everything, what you’re doing or trying to do, what you’re thinking, why, and anything else that pops into your head in this process. For example “I’m going to click on this” and you can click the paper or “I’m not sure what to do here”. There is no offending us with what you do, we want to see how a user would actually interact with this and see how we can improve. I’ll be your facilitator, Vennise will be taking notes and BLANK and Arush will be triggering the actions based on what you do in the prototype. We want you to try to complete 2 tasks, one is to make a new outfit and then save it, and the other is to log that you wore an outfit. Let me know if you have any questions and if not we can get started. 
+
+
+Who participates and why:
+4–6 university students (ages 18–25) who regularly deal with outfit creation stress in the morning. We need to see if our collage and archive logic actually feels intuitive to them and if it successfully offloads the mental burden of remembering past outfits.
+
+
+Type of Data Collected:
+Verbal “stream-of-consciousness” feedback, task completion rates, and events where users get stuck or confused. This data shows us where the user's mental model doesn't match our design and whether the app actually reduces their cognitive load. 
+
+
+MISSING
+Miral
+Prisha
+Computer 1
+Prisha
+Miral
+Computer 2
+Arush
+Arush
+Facilitator
+Gaia
+Gaia
+Notetaker
+Vennise
+Vennise
+
+Appendix E: Think Aloud Raw Data
+ROUND 1 (TA)
+Problem spots (Places when paused)
+Drag n drop closet
+Paused at daily log, don’t know if something is pressable or not. Maybe confused about ui/purpose
+Tried pressing a history log as a button
+Assumed closet was sorted by date → calendar function?
+Stopped at plus button for adding clothes, didn't know the exact purpose of it
+Save/confirm on filters, photo section
+
+
+Phrases said out loud
+“Did I set this?” → tags
+“Daily recap” → this is what i wore today
+Thought it was just logging the outfit that I did today
+“If i press on history does anything happen?”
+“Crop function” for auto-detect in photos
+Filters: want it all laid out daily/beginning of catalogue/closet (one less button to click)
+
+
+Questions asked
+“Where can I reset the search filter”
+“What if i wanted to layer?” → plus button let’s you layer?
+
+
+Needed to be told
+Didn’t know if she can upload the new outfit → (+) vs (upload file button)
+
+
+Feedback
+History: want to see specifically what I wore
+
+
+Notes from arush
+Delete + duplicates in closet
+
+
+Notes from vennise:
+Maybe we do pinterest board instead of dress to impress
+
+
+ROUND 2 (Gaia’s friend)
+Process (save an outfit):
+Catalogue  → New outfit button
+Closet → upload photos button
+Drag n dropped and saved successfully
+Process (log an outfit):
+Knew to press “i wore this”
+
+
+Problem spots (Places when paused)
+Checkmark is more clear than (+) 
+Drag n drop closet
+Tried clicking the actual top in a preexisting outfit to change it
+
+
+Phrases said out loud
+
+
+
+
+Questions asked
+“Are these [clothing items] the ones I have already worn?” -> referring to the catalog items
+“Can i do an accessory option?”
+“Can i click on the top just to change the top or do i have to click edit” → catalogue
+“Can I add a layer”
+
+
+Needed to be told
+
+
+
+
+Further Notes
+Swiping on just the top and seeing what pants go with it → closet section, making new outfit section?
+Randomizer (shuffle) button → based on weather though → stretch goal
+
+
+ROUND 3 (random person 1)
+Process 1:
+Closet
+New outfit
+Created outfit → Wants to layer (tried to put two tops)
+Saved
+
+
+Process 2:
+Found I wore this easily
+Was able to edit events easily
+
+
+Process (add photos)
+Liked that she was able to take a photo and have it automatically be sectioned into pieces from closet
+
+
+Problem spots (Places when paused)
+Clicked the top placeholder, thinking it might to do something. Instead of drag n drop.
+
+
+Phrases said out loud
+
+
+
+
+Questions asked
+
+
+
+
+Needed to be told 
+	
+
+
+ROUND 4 (random person 2)
+Process 1:
+Tried to use an outfit as a base
+Tried to click history
+Tried to click I wore this today
+Drag n drop 
+Took a photo
+Added an outfit
+Went back
+
+
+Problem spots (Places when paused)
+Drag n drop
+
+
+Phrases said out loud
+“Preselects” → closet 
+
+
+Questions asked
+
+
+
+
+Needed to be told 
+
+
+
+
+Further Notes:
+How submenus are organized → edit + view are side by side
+G2 Contribution Report
+Purpose
+ The purpose of the G2 Contribution Report is to document actual contributions made by each team member during G2 and to compare them against the planned contributions outlined in the G2 Contribution Plan.
+The report does not change the group’s assessed score. Instead, it is used to adjust individual grades upward or downward relative to the group grade.
+Group Information
+Group name: Wind & Co. 
+Project title/problem space: Getting Dressed
+Date: March 2nd, 2026
+ 
+Team members
+Planned
+Contribution %
+Actual contribution %
+1. Prisha Patel
+20 
+ 20
+2. Miral Yousef
+20 
+ 20
+3. Arush Gupta
+20 
+ 20
+4. Gaia Micciancio
+ 20
+20
+5. Vennise Ho
+20 
+ 20
+6.
+ 
+ 
+
+ 
+Actual Distribution of Work
+ Percentages should reflect actual effort, not intended effort, and should sum to approximately 100% across the table. Additionally, the sum of the percentage splits for each student should match the actual contribution % on page 1.
+Artifact/Activity
+ (approximate effort range)
+Actual effort %
+Primary owner
+ (percentage split)
+Secondary contributors
+ (percentage split)
+Design alternatives (exploration) (15-20%)
+15
+Prisha (10)
+Vennise (5)
+Alternatives comparison & convergence rationale (10-15%)
+10 
+Vennise (5)
+Arush (5)
+Storyboards (tasks & interaction flow) (15-20%)
+ 20
+Arush (15)
+Gaia (5)
+Paper prototype implementation (15-20%)
+ 20
+Miral (10)
+Prisha (10)
+Early evaluation design & execution (15-20%)
+ 15
+Gaia (10)
+Vennise (5)
+Evaluation synthesis & design implications (10-15%)
+ 10 
+Vennise (5)
+Gaia (5) 
+Report integration & editing (5-10%)
+ 10      10
+Miral (10)
+
+
+
+ 
+
+
+Reference to Contribution Plan
+ Briefly summarize (3–5 sentences):
+●  How closely the group was able to follow the original G2 Contribution Plan
+We followed the original contribution plan very closely, without any changes to each person’s intended contributions. 
+●     Any significant deviations from the plan
+There were no significant deviations from the plan. The one notable thing is that the expected effort for the storyboard was lower than the actual effort required, since we found that we needed to add an extra storyboard (we did 6 instead of 5). 
+●     Why those deviations occurred
+We added the extra storyboard to help in creating the paper prototype, after we realized that there were some interactions missing. 
+Individual Contribution Summary
+ Each student must complete one row summarizing their own contribution. Percentages should be consistent with the table above.
+Focus on contributions for which you had primary or shared responsibility in the Contribution Plan.
+Team member
+Planned
+ %
+Actual
+ %
+Key Contributions
+(2-4 bullet points)
+Major Challenges or Additional Effort
+1. Prisha Patel
+20 
+ 20
+Brainstormed and sketched out 3 design alternatives
+Made many of the paper prototype pieces, including new materials once we realized we needed more interactions
+One of the biggest challenges was conceptually mapping out how the interactions would flow in a real setting from the user’s perspective. The storyboards had multiple and diverse interactions, but integrating these features into one cohesive app was difficult.
+2. Miral Yousef
+20 
+ 20
+Created a portion of the paper prototype materials, flagging potential usability issues in the design along the way. 
+Integrated the report to ensure that our use of dependencies was clear, and that our cohesive line of thought is evident throughout. 
+The biggest challenge I found was dealing with the small non-solution based features of the app. Although the storyboards accounted for the big issues we wanted to tackle, there are certain things we take for granted when drawing up a design such as back buttons. 
+3. Arush Gupta
+20 
+ 20
+ Created 1 high level story board to describe the process of combatting social anxiety with our product
+Created 2 Screen Level story boards to show different aspects of functionality in our design
+Helped review design direction finalization 
+The biggest challenge I faced was just imagining how the process of adding new clothes would and visualizing it through storyboards. It took some back and forth with my group members and ideation to get a solid foundational idea to visualize.
+4. Gaia Micciancio
+ 20
+20
+Created 3 of the storyboards, 1 high level and 2 screen level 
+Planned out the evaluation methods with Vennise
+Brainstormed and collaborated on evaluation synthesis and findings
+Wrote finding 3 
+ It took a bit to wrap my head around all the data in the findings, and recognize the links between our different evaluations. Had to create extra storyboard later in process when paper prototype people realized there was a gap 
+5. Vennise Ho
+20 
+ 20
+Brainstormed design alternatives with Prisha
+Worked with Arush to discuss benefits and tradeoffs to choose our design direction
+Planned our evaluation methods with Gaia
+Synthesized evaluation findings and reflected on the implications of those findings in our next iteration
+ Data from our early evaluation was difficult to synthesize into concrete findings as there was not too much overlap between what our different users said. 
+
+
+6.
+ 
+ 
+ 
+ 
+
+ Reflection on Contribution Changes
+ Briefly answer (5–8 sentences total):
+Which contributions increased or decreased relative to the plan?
+Overall, the percentage that each person contributed did not change from the plan
+Why did these changes occur?
+N/A
+How did the group adapt during iteration, convergence, and evaluation?
+As a group, we made sure to communicate our progress on the group chat so that the next person was able to start working once prior steps had been completed. We made sure to have regular meetings with our entire group as well as separate meetings with other members working on the same section as us. Additionally, if we found issues with prior steps, we consulted the people who had been working on the respective part so they could iterate and refine their work, in order to make it easier for people down the line.
+Acknowledgement of Grading Policy
+ Each team member must read and acknowledge the following statement:
+I understand that the G2 submission is graded based on its overall quality. My individual grade may be adjusted upward or downward relative to the group grade based on how my actual contribution compares to what was documented in the G2 Contribution Plan and this G2 Contribution Report.
+Team members                                            	Signatures
+1. Miral Yousef
+ Miral Yousef
+2. Prisha Patel
+ Prisha Patel
+3. Vennise Ho
+ Vennise Ho
+4.Gaia Micciancio
+ Gaia Micciancio 
+5. Arush Gupta 
+ Arush Gupta 
+6.
+ 
+
+Submission Instructions
+●     Submit this document as a single PDF
+●     One submission per group
+●     Submit alongside the final G2 report
