@@ -1,19 +1,26 @@
 import React from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
 import AppNavigator from './src/navigation/AppNavigator';
+import { OutfitProvider } from './src/context/OutfitContext';
 
 export default function App() {
   if (Platform.OS === 'web') {
     return (
-      <View style={styles.webOuter}>
-        <View style={styles.phoneFrame}>
-          <AppNavigator />
+      <OutfitProvider>
+        <View style={styles.webOuter}>
+          <View style={styles.phoneFrame}>
+            <AppNavigator />
+          </View>
         </View>
-      </View>
+      </OutfitProvider>
     );
   }
 
-  return <AppNavigator />;
+  return (
+    <OutfitProvider>
+      <AppNavigator />
+    </OutfitProvider>
+  );
 }
 
 const styles = StyleSheet.create({
