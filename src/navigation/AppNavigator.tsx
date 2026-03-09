@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { View, StyleSheet, Platform } from 'react-native';
 import { Colors } from '../theme';
@@ -9,9 +10,20 @@ import DashboardScreen from '../screens/DashboardScreen';
 import ClosetScreen from '../screens/ClosetScreen';
 import OutfitBuilderScreen from '../screens/OutfitBuilderScreen';
 import ArchiveScreen from '../screens/ArchiveScreen';
+import OutfitDetailsScreen from '../screens/OutfitDetailsScreen';
 import SocialLogScreen from '../screens/SocialLogScreen';
 
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
+
+function ArchiveStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="ArchiveList" component={ArchiveScreen} />
+      <Stack.Screen name="OutfitDetails" component={OutfitDetailsScreen} />
+    </Stack.Navigator>
+  );
+}
 
 const LightTheme = {
   ...DefaultTheme,
@@ -78,7 +90,7 @@ export default function AppNavigator() {
         <Tab.Screen name="DashboardTab" component={DashboardScreen} options={{ tabBarLabel: 'Home' }} />
         <Tab.Screen name="ClosetTab" component={ClosetScreen} options={{ tabBarLabel: 'Closet' }} />
         <Tab.Screen name="OutfitBuilderTab" component={OutfitBuilderScreen} options={{ tabBarLabel: 'Create' }} />
-        <Tab.Screen name="ArchiveTab" component={ArchiveScreen} options={{ tabBarLabel: 'Saved' }} />
+        <Tab.Screen name="ArchiveTab" component={ArchiveStack} options={{ tabBarLabel: 'Saved' }} />
         <Tab.Screen name="SocialLogTab" component={SocialLogScreen} options={{ tabBarLabel: 'History' }} />
       </Tab.Navigator>
     </NavigationContainer>
