@@ -96,7 +96,7 @@ async def segment_clothing(file: UploadFile = File(...)):
         
         # Max resolution clamp. Crucial for Render free-tier memory limit. 
         # Large 12+ Megapixel iPhone photos will crash the container RAM limits.
-        image.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
+        image.thumbnail((512, 512), Image.Resampling.LANCZOS)
         
         # Original size for resizing the mask back
         original_size = image.size[::-1] # (height, width)

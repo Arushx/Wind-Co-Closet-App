@@ -243,6 +243,7 @@ export default function OutfitBuilderScreen() {
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView 
+          style={{ flex: 1 }}
           showsVerticalScrollIndicator={false} 
           contentContainerStyle={styles.container}
           keyboardShouldPersistTaps="handled"
