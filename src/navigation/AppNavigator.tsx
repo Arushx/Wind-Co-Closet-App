@@ -12,9 +12,30 @@ import OutfitBuilderScreen from '../screens/OutfitBuilderScreen';
 import ArchiveScreen from '../screens/ArchiveScreen';
 import OutfitDetailsScreen from '../screens/OutfitDetailsScreen';
 import SocialLogScreen from '../screens/SocialLogScreen';
+import ItemDetailScreen from '../screens/ItemDetailScreen';
+import AddItemScreen from '../screens/AddItemScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
+
+function ClosetStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="ClosetList" component={ClosetScreen} />
+      <Stack.Screen name="ItemDetail" component={ItemDetailScreen} />
+      <Stack.Screen 
+        name="AddItem" 
+        component={AddItemScreen} 
+        options={{ 
+          headerShown: true, 
+          title: 'Add Item',
+          headerStyle: { backgroundColor: Colors.surface },
+          headerTintColor: Colors.text,
+        }} 
+      />
+    </Stack.Navigator>
+  );
+}
 
 function ArchiveStack() {
   return (
@@ -88,7 +109,7 @@ export default function AppNavigator() {
         })}
       >
         <Tab.Screen name="DashboardTab" component={DashboardScreen} options={{ tabBarLabel: 'Home' }} />
-        <Tab.Screen name="ClosetTab" component={ClosetScreen} options={{ tabBarLabel: 'Closet' }} />
+        <Tab.Screen name="ClosetTab" component={ClosetStack} options={{ tabBarLabel: 'Closet' }} />
         <Tab.Screen name="OutfitBuilderTab" component={OutfitBuilderScreen} options={{ tabBarLabel: 'Create' }} />
         <Tab.Screen name="ArchiveTab" component={ArchiveStack} options={{ tabBarLabel: 'Saved' }} />
         <Tab.Screen name="SocialLogTab" component={SocialLogScreen} options={{ tabBarLabel: 'History' }} />

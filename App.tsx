@@ -2,24 +2,29 @@ import React from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
 import AppNavigator from './src/navigation/AppNavigator';
 import { OutfitProvider } from './src/context/OutfitContext';
+import { ClosetProvider } from './src/context/ClosetContext';
 
 export default function App() {
   if (Platform.OS === 'web') {
     return (
-      <OutfitProvider>
-        <View style={styles.webOuter}>
-          <View style={styles.phoneFrame}>
-            <AppNavigator />
+      <ClosetProvider>
+        <OutfitProvider>
+          <View style={styles.webOuter}>
+            <View style={styles.phoneFrame}>
+              <AppNavigator />
+            </View>
           </View>
-        </View>
-      </OutfitProvider>
+        </OutfitProvider>
+      </ClosetProvider>
     );
   }
 
   return (
-    <OutfitProvider>
-      <AppNavigator />
-    </OutfitProvider>
+    <ClosetProvider>
+      <OutfitProvider>
+        <AppNavigator />
+      </OutfitProvider>
+    </ClosetProvider>
   );
 }
 
