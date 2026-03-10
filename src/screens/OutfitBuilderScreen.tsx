@@ -595,6 +595,7 @@ const styles = StyleSheet.create({
   },
 
   tagInputContainer: {
+    height: 48,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surface,
@@ -613,7 +614,7 @@ const styles = StyleSheet.create({
   tagAddButton: {
     backgroundColor: Colors.primary,
     paddingHorizontal: Spacing.md,
-    height: '100%',
+    alignSelf: 'stretch',
     justifyContent: 'center',
   },
   appliedTagsRow: {
