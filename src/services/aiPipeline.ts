@@ -12,15 +12,19 @@ export interface ExtractedItem {
 
 export async function extractOutfitItems(imageUri: string): Promise<ExtractedItem[]> {
   try {
-    // If we're on web, fetch the blob directly from the object URL
-    let fileBlob: Blob;
-    
-    // Both web and native URI can be fetched to a blob natively in modern React Native/Expo
-    const response = await fetch(imageUri);
-    fileBlob = await response.blob();
-
     const formData = new FormData();
-    formData.append('file', fileBlob, 'outfit.jpg');
+    if (Platform.OS === 'web') {
+      const response = await fetch(imageUri);
+      const fileBlob = await response.blob();
+      formData.append('file', fileBlob, 'outfit.jpg');
+    } else {
+      // Native mobile networking layers require an object blob reference format for files.
+      formData.append('file', {
+        uri: imageUri,
+        type: 'image/jpeg',
+        name: 'outfit.jpg',
+      } as any);
+    }
 
     // Pointing to the live Render ML Backend
     const apiUrl = 'https://wind-co-closet-app.onrender.com/segment';

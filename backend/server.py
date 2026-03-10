@@ -94,12 +94,17 @@ async def segment_clothing(file: UploadFile = File(...)):
         contents = await file.read()
         image = Image.open(io.BytesIO(contents)).convert("RGB")
         
+        # Max resolution clamp. Crucial for Render free-tier memory limit. 
+        # Large 12+ Megapixel iPhone photos will crash the container RAM limits.
+        image.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
+        
         # Original size for resizing the mask back
         original_size = image.size[::-1] # (height, width)
 
         # Preprocess and run inference
         inputs = processor(images=image, return_tensors="pt")
-        outputs = model(**inputs)
+        with torch.no_grad():
+            outputs = model(**inputs)
         
         # Get logits and upsample to original size
         logits = outputs.logits.cpu()
