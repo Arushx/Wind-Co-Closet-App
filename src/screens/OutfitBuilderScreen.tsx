@@ -242,7 +242,11 @@ export default function OutfitBuilderScreen() {
       </View>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.container}>
+        <ScrollView 
+          showsVerticalScrollIndicator={false} 
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+        >
           
           {/* Flat-Lay Slots */}
           <View style={styles.flatLayContainer}>
@@ -484,7 +488,7 @@ const styles = StyleSheet.create({
   },
   title: { ...Typography.title },
   clearText: { ...Typography.subhead, color: Colors.coral, fontWeight: '600' },
-  container: { paddingBottom: Spacing.xxl * 2 },
+  container: { paddingBottom: 150 },
   
   flatLayContainer: {
     padding: Spacing.lg,
