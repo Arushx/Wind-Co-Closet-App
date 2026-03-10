@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, Modal, ScrollView, Platform, TextInput, KeyboardAvoidingView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, Modal, ScrollView, Platform, TextInput, KeyboardAvoidingView, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../theme';
@@ -49,6 +49,15 @@ export default function SocialLogScreen() {
 
   const [saveAsDefaultAudience, setSaveAsDefaultAudience] = useState(false);
   const { updateOutfit, updateEventDefaults, eventDefaultAudiences } = useOutfitContext();
+  
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000);
+  }, []);
 
   const openGlobalLogModal = () => {
     setLogSelectedOutfitId(null);
@@ -310,6 +319,9 @@ export default function SocialLogScreen() {
         renderItem={renderTimelineItem}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
+        }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Ionicons name="time-outline" size={64} color={Colors.border} />

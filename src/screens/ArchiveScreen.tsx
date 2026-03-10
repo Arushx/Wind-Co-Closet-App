@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Image, ScrollView, TouchableOpacity, TextInput, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../theme';
 import { useOutfitContext, Outfit, SEASONS } from '../context/OutfitContext';
+import { useCloset } from '../context/ClosetContext';
 
 const SORT_OPTIONS = [
   { id: 'newest', label: 'Newest' },
@@ -27,12 +28,22 @@ const OutfitCard = ({ outfit }: { outfit: Outfit }) => {
       {/* 2x2 Image Grid */}
       <View style={styles.imageGrid}>
         <View style={styles.imageRow}>
-          <Image source={{ uri: outfit.images[0] }} style={[styles.image, styles.imageTopLeft]} />
-          <Image source={{ uri: outfit.images[1] }} style={[styles.image, styles.imageTopRight]} />
+          {outfit.images[0] ? (
+            <Image source={{ uri: outfit.images[0] }} style={[styles.image, styles.imageTopLeft]} resizeMode="contain" />
+          ) : <View style={[styles.image, styles.imageTopLeft, styles.emptyImage]} />}
+          
+          {outfit.images[1] ? (
+            <Image source={{ uri: outfit.images[1] }} style={[styles.image, styles.imageTopRight]} resizeMode="contain" />
+          ) : <View style={[styles.image, styles.imageTopRight, styles.emptyImage]} />}
         </View>
         <View style={styles.imageRow}>
-          <Image source={{ uri: outfit.images[2] }} style={[styles.image, styles.imageBottomLeft]} />
-          <Image source={{ uri: outfit.images[3] }} style={[styles.image, styles.imageBottomRight]} />
+          {outfit.images[2] ? (
+            <Image source={{ uri: outfit.images[2] }} style={[styles.image, styles.imageBottomLeft]} resizeMode="contain" />
+          ) : <View style={[styles.image, styles.imageBottomLeft, styles.emptyImage]} />}
+          
+          {outfit.images[3] ? (
+            <Image source={{ uri: outfit.images[3] }} style={[styles.image, styles.imageBottomRight]} resizeMode="contain" />
+          ) : <View style={[styles.image, styles.imageBottomRight, styles.emptyImage]} />}
         </View>
       </View>
 
@@ -70,14 +81,72 @@ const OutfitCard = ({ outfit }: { outfit: Outfit }) => {
 };
 
 export default function ArchiveScreen() {
-  const [selectedSeason, setSelectedSeason] = useState<string | null>(null);
+  const { items } = useCloset();
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [selectedTemp, setSelectedTemp] = useState<string | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isFiltersVisible, setIsFiltersVisible] = useState(false);
   const [isSortVisible, setIsSortVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<string>('newest');
+  const [refreshing, setRefreshing] = useState(false);
 
   const { outfits, allTags: ALL_TAGS } = useOutfitContext();
+  
+  const OUTFIT_COLORS = ['Black', 'White', 'Blue', 'Red', 'Green', 'Yellow', 'Neutral'];
+  const OUTFIT_TEMPS = [
+    { label: 'Cold (< 10°C)', value: 'cold' },
+    { label: 'Mild (10-20°C)', value: 'mild' },
+    { label: 'Warm (> 20°C)', value: 'warm' }
+  ];
+
+  const getOutfitDetails = React.useCallback((outfit: Outfit) => {
+    let colors = [];
+    let minTemp = null;
+    let maxTemp = null;
+    let textCorpus = `${outfit.name} ${outfit.season}`;
+    
+    // Fallback: extract piece IDs assuming outfit.pieces might just contain the ids or names.
+    // Assuming outfit.pieces stores names if it was from previous data, but the new items hold the data.
+    // For simplicity, we just aggregate any item data if it matches the name/id.
+    const outfitItems = items.filter(i => outfit.pieces.includes(i.id) || outfit.pieces.includes(i.name));
+    
+    for (const item of outfitItems) {
+      if (item.color) colors.push(item.color.toLowerCase());
+      textCorpus += ` ${item.name} ${item.brand || ''}`;
+      if (item.weatherRating) {
+         minTemp = minTemp === null ? item.weatherRating.minTemp : Math.min(minTemp, item.weatherRating.minTemp);
+         maxTemp = maxTemp === null ? item.weatherRating.maxTemp : Math.max(maxTemp, item.weatherRating.maxTemp);
+      }
+    }
+    
+    // Categorize Temp
+    let tempCategory = null;
+    if (minTemp !== null && maxTemp !== null) {
+      if (minTemp < 10) tempCategory = 'cold';
+      else if (maxTemp > 20) tempCategory = 'warm';
+      else tempCategory = 'mild';
+    }
+    
+    // Categorize Color matching roughly (naive approach for demonstration)
+    let colorCategory = null;
+    if (colors.some(c => c.includes('black'))) colorCategory = 'Black';
+    else if (colors.some(c => c.includes('white'))) colorCategory = 'White';
+    else if (colors.some(c => c.includes('blue'))) colorCategory = 'Blue';
+    else if (colors.some(c => c.includes('red'))) colorCategory = 'Red';
+    else if (colors.some(c => c.includes('green'))) colorCategory = 'Green';
+    else if (colors.some(c => c.includes('yellow'))) colorCategory = 'Yellow';
+    else if (colors.length > 0) colorCategory = 'Neutral';
+
+    return { colorCategory, tempCategory, textCorpus };
+  }, [items]);
+
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000);
+  }, []);
 
   const toggleTag = (tag: string) => {
     setSelectedTags(prev =>
@@ -89,34 +158,35 @@ export default function ArchiveScreen() {
     const lowerQuery = searchQuery.toLowerCase();
 
     const filtered = outfits.filter(outfit => {
-      // Check favorites sort filter
+      const { colorCategory, tempCategory, textCorpus } = getOutfitDetails(outfit);
+
       if (sortBy === 'favorites' && !outfit.isFavorite) {
         return false;
       }
 
-      // Check season filter
-      if (selectedSeason && outfit.season !== selectedSeason) {
+      if (selectedColor && colorCategory !== selectedColor) {
         return false;
       }
-      // Check tags filter (outfit must contain ALL selected tags)
+      
+      if (selectedTemp && tempCategory !== selectedTemp) {
+        return false;
+      }
+
       if (selectedTags.length > 0 && !selectedTags.every(t => outfit.tags.includes(t))) {
         return false;
       }
-      // Check query against name, season, tags, and pieces
+
       if (lowerQuery) {
         const matchesName = outfit.name.toLowerCase().includes(lowerQuery);
-        const matchesSeason = outfit.season.toLowerCase().includes(lowerQuery);
         const matchesTags = outfit.tags.some(t => t.toLowerCase().includes(lowerQuery));
-        const matchesPieces = outfit.pieces.some(p => p.toLowerCase().includes(lowerQuery));
-
-        if (!matchesName && !matchesSeason && !matchesTags && !matchesPieces) {
+        const matchesTextCorpus = textCorpus.toLowerCase().includes(lowerQuery);
+        if (!matchesName && !matchesTags && !matchesTextCorpus) {
           return false;
         }
       }
       return true;
     });
 
-    // Apply sorting
     return filtered.sort((a, b) => {
       switch(sortBy) {
         case 'oldest':
@@ -126,15 +196,15 @@ export default function ArchiveScreen() {
         case 'least_worn':
           return a.timesWorn - b.timesWorn;
         case 'newest':
-        case 'favorites': // For favorites, sort by newest as a default secondary sort
+        case 'favorites':
         default:
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       }
     });
 
-  }, [outfits, selectedSeason, selectedTags, searchQuery, sortBy]);
+  }, [outfits, getOutfitDetails, selectedColor, selectedTemp, selectedTags, searchQuery, sortBy]);
 
-  const activeFiltersCount = (selectedSeason ? 1 : 0) + selectedTags.length;
+  const activeFiltersCount = (selectedColor ? 1 : 0) + (selectedTemp ? 1 : 0) + selectedTags.length;
   const currentSortLabel = SORT_OPTIONS.find(opt => opt.id === sortBy)?.label || 'Newest';
 
   const renderSortChips = () => {
@@ -168,18 +238,36 @@ export default function ArchiveScreen() {
 
     return (
       <View style={styles.filtersContainer}>
-        <Text style={styles.filterSectionTitle}>Seasons</Text>
+        <Text style={styles.filterSectionTitle}>Dominant Color</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-          {SEASONS.map(season => {
-            const isSelected = selectedSeason === season;
+          {OUTFIT_COLORS.map(color => {
+            const isSelected = selectedColor === color;
             return (
               <TouchableOpacity
-                key={season}
+                key={color}
                 style={[styles.filterChip, isSelected && styles.filterChipSelected]}
-                onPress={() => setSelectedSeason(isSelected ? null : season)}
+                onPress={() => setSelectedColor(isSelected ? null : color)}
               >
                 <Text style={[styles.filterChipText, isSelected && styles.filterChipTextSelected]}>
-                  {season}
+                  {color}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+        
+        <Text style={[styles.filterSectionTitle, { marginTop: Spacing.md }]}>Temperature Range</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+          {OUTFIT_TEMPS.map(temp => {
+            const isSelected = selectedTemp === temp.value;
+            return (
+              <TouchableOpacity
+                key={temp.value}
+                style={[styles.filterChip, isSelected && styles.filterChipSelected]}
+                onPress={() => setSelectedTemp(isSelected ? null : temp.value)}
+              >
+                <Text style={[styles.filterChipText, isSelected && styles.filterChipTextSelected]}>
+                  {temp.label}
                 </Text>
               </TouchableOpacity>
             );
@@ -266,6 +354,9 @@ export default function ArchiveScreen() {
           style={styles.list}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
+          }
         >
           {renderSortChips()}
           {renderFilterChips()}
@@ -427,7 +518,11 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 150, // explicit height for reliable remote loading
     borderWidth: 1,
-    borderColor: Colors.surfaceWarm,
+    borderColor: Colors.borderLight,
+    backgroundColor: Colors.surfaceWarm,
+  },
+  emptyImage: {
+    backgroundColor: Colors.surface,
   },
   imageTopLeft: {
     borderTopLeftRadius: BorderRadius.xl,

@@ -64,6 +64,7 @@ export default function AppNavigator() {
       <Tab.Navigator
         screenOptions={({ route }) => ({
           headerShown: false,
+          unmountOnBlur: true,
           tabBarIcon: ({ focused, color, size }) => {
             let iconName: keyof typeof Ionicons.glyphMap = 'home';
 
@@ -83,6 +84,14 @@ export default function AppNavigator() {
               case 'SocialLogTab':
                 iconName = focused ? 'time' : 'time-outline';
                 break;
+            }
+
+            if (route.name === 'OutfitBuilderTab') {
+              return (
+                <View style={[styles.iconWrap, focused && { backgroundColor: Colors.accentSoft }]}>
+                  <Ionicons name={iconName} size={22} color={focused ? Colors.accent : Colors.textMuted} />
+                </View>
+              );
             }
 
             return (

@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, Image } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, Image, RefreshControl, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../theme';
 import { useCloset, ClothingItem } from '../context/ClosetContext';
 
@@ -15,6 +15,23 @@ interface ClosetScreenProps {
 export default function ClosetScreen({ navigation }: ClosetScreenProps) {
   const { items } = useCloset();
   const [selectedCategory, setSelectedCategory] = useState<ClothingCategory>('all');
+  const [selectedSeason, setSelectedSeason] = useState<'all' | 'spring' | 'summer' | 'fall' | 'winter'>('all');
+  const [selectedTag, setSelectedTag] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+
+  const allTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    items.forEach(item => (item.tags || []).forEach(t => tagSet.add(t)));
+    return Array.from(tagSet).sort();
+  }, [items]);
+
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000);
+  }, []);
 
   const categories: { key: ClothingCategory; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }[] = [
     { key: 'all', label: 'All', icon: 'view-grid' },
@@ -24,9 +41,43 @@ export default function ClosetScreen({ navigation }: ClosetScreenProps) {
     { key: 'accessories', label: 'Accessories', icon: 'bag-personal' },
   ];
 
-  const filteredItems = selectedCategory === 'all' 
-    ? items 
-    : items.filter(item => item.category === selectedCategory);
+  const seasons: { key: 'all' | 'spring' | 'summer' | 'fall' | 'winter'; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }[] = [
+    { key: 'all', label: 'All Weather', icon: 'cloud' },
+    { key: 'spring', label: 'Spring', icon: 'flower' },
+    { key: 'summer', label: 'Summer', icon: 'white-balance-sunny' },
+    { key: 'fall', label: 'Fall', icon: 'leaf' },
+    { key: 'winter', label: 'Winter', icon: 'snowflake' },
+  ];
+
+  const filteredItems = useMemo(() => {
+    let result = items.filter(item => {
+      const categoryMatch = selectedCategory === 'all' || item.category === selectedCategory;
+      const seasonMatch = selectedSeason === 'all' || (item.seasons && item.seasons.includes(selectedSeason));
+      const tagMatch = selectedTag === 'all' || (item.tags && item.tags.includes(selectedTag));
+      return categoryMatch && seasonMatch && tagMatch;
+    });
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter(item =>
+        item.name.toLowerCase().includes(q) ||
+        item.brand.toLowerCase().includes(q) ||
+        item.category.toLowerCase().includes(q) ||
+        (item.tags || []).some(t => t.toLowerCase().includes(q))
+      );
+      // Sort by relevance: name match first, then brand, then rest
+      result.sort((a, b) => {
+        const aName = a.name.toLowerCase().includes(q) ? 0 : 1;
+        const bName = b.name.toLowerCase().includes(q) ? 0 : 1;
+        if (aName !== bName) return aName - bName;
+        const aBrand = a.brand.toLowerCase().includes(q) ? 0 : 1;
+        const bBrand = b.brand.toLowerCase().includes(q) ? 0 : 1;
+        return aBrand - bBrand;
+      });
+    }
+
+    return result;
+  }, [items, selectedCategory, selectedSeason, selectedTag, searchQuery]);
 
   const getStatusColor = (status: ClothingStatus) => {
     switch (status) {
@@ -54,7 +105,7 @@ export default function ClosetScreen({ navigation }: ClosetScreenProps) {
         <Image 
           source={{ uri: item.imageUrl }}
           style={styles.itemImage}
-          resizeMode="cover"
+          resizeMode="contain"
         />
       </View>
       
@@ -92,6 +143,24 @@ export default function ClosetScreen({ navigation }: ClosetScreenProps) {
           <Text style={styles.itemCount}>{filteredItems.length} items</Text>
         </View>
 
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={18} color={Colors.textMuted} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search by name, brand, or tag..."
+            placeholderTextColor={Colors.textMuted}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            returnKeyType="search"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
+            </TouchableOpacity>
+          )}
+        </View>
+
         {/* Category Filter */}
         <ScrollView 
           horizontal 
@@ -124,8 +193,82 @@ export default function ClosetScreen({ navigation }: ClosetScreenProps) {
           ))}
         </ScrollView>
 
+        {/* Season Filter */}
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false} 
+          style={styles.categoriesContainer}
+          contentContainerStyle={styles.categoriesContent}
+        >
+          {seasons.map(season => (
+            <TouchableOpacity
+              key={season.key}
+              style={[
+                styles.categoryButton,
+                selectedSeason === season.key && styles.categoryButtonActive
+              ]}
+              onPress={() => setSelectedSeason(season.key)}
+              activeOpacity={0.7}
+            >
+              <MaterialCommunityIcons 
+                name={season.icon}
+                size={20}
+                color={selectedSeason === season.key ? Colors.accent : Colors.textSecondary}
+              />
+              <Text style={[
+                styles.categoryText,
+                selectedSeason === season.key && styles.categoryTextActive
+              ]}>
+                {season.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {/* Tag Filter */}
+        {allTags.length > 0 && (
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false} 
+            style={styles.categoriesContainer}
+            contentContainerStyle={styles.categoriesContent}
+          >
+            <TouchableOpacity
+              style={[
+                styles.categoryButton,
+                selectedTag === 'all' && styles.categoryButtonActive
+              ]}
+              onPress={() => setSelectedTag('all')}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="pricetag" size={16} color={selectedTag === 'all' ? Colors.accent : Colors.textSecondary} />
+              <Text style={[
+                styles.categoryText,
+                selectedTag === 'all' && styles.categoryTextActive
+              ]}>All Tags</Text>
+            </TouchableOpacity>
+            {allTags.map(tag => (
+              <TouchableOpacity
+                key={tag}
+                style={[
+                  styles.categoryButton,
+                  selectedTag === tag && styles.categoryButtonActive
+                ]}
+                onPress={() => setSelectedTag(tag)}
+                activeOpacity={0.7}
+              >
+                <Text style={[
+                  styles.categoryText,
+                  selectedTag === tag && styles.categoryTextActive
+                ]}>{tag}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
+
         {/* Items Grid */}
         <FlatList
+          style={{ flex: 1 }}
           data={filteredItems}
           renderItem={renderClothingItem}
           keyExtractor={item => item.id}
@@ -134,6 +277,9 @@ export default function ClosetScreen({ navigation }: ClosetScreenProps) {
           contentContainerStyle={[styles.listContent, filteredItems.length === 0 && styles.listContentEmpty]}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={renderEmptyState}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
+          }
         />
 
         {/* Floating Action Button */}
@@ -173,9 +319,31 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
   },
   
+  // Search
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: BorderRadius.lg,
+    paddingHorizontal: Spacing.md,
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.md,
+    gap: Spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: Spacing.sm + 2,
+    ...Typography.body,
+    fontSize: 14,
+  },
+
   // Categories
   categoriesContainer: {
     marginBottom: Spacing.md,
+    flexGrow: 0,
+    minHeight: 40,
   },
   categoriesContent: {
     paddingHorizontal: Spacing.lg,

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TextInput, TouchableOpacity, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../theme';
@@ -11,20 +11,7 @@ type Season = 'spring' | 'summer' | 'fall' | 'winter';
 
 interface ItemDetailScreenProps {
   navigation: any;
-  route: {
-    params: {
-      item: {
-        id: string;
-        name: string;
-        brand: string;
-        category: ClothingCategory;
-        color: string;
-        status: ClothingStatus;
-        imageUrl: string;
-        seasons: Season[];
-      };
-    };
-  };
+  route: any;
 }
 
 export default function ItemDetailScreen({ navigation, route }: ItemDetailScreenProps) {
@@ -84,21 +71,29 @@ export default function ItemDetailScreen({ navigation, route }: ItemDetailScreen
   };
 
   const handleDelete = () => {
-    Alert.alert(
-      'Delete Item',
-      `Are you sure you want to delete "${name}"? This action cannot be undone.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            deleteItem(item.id);
-            navigation.goBack();
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`);
+      if (confirmed) {
+        deleteItem(item.id);
+        navigation.goBack();
+      }
+    } else {
+      Alert.alert(
+        'Delete Item',
+        `Are you sure you want to delete "${name}"? This action cannot be undone.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: () => {
+              deleteItem(item.id);
+              navigation.goBack();
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    }
   };
 
   const handleSave = () => {
@@ -133,7 +128,7 @@ export default function ItemDetailScreen({ navigation, route }: ItemDetailScreen
           <Image 
             source={{ uri: item.imageUrl }}
             style={styles.image}
-            resizeMode="cover"
+            resizeMode="contain"
           />
         </View>
 

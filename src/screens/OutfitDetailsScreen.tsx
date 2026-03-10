@@ -9,7 +9,7 @@ import { useOutfitContext, Outfit, SEASONS } from '../context/OutfitContext';
 import { useLocationSearch } from '../hooks/useLocationSearch';
 
 export default function OutfitDetailsScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const route = useRoute();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -28,10 +28,10 @@ export default function OutfitDetailsScreen() {
   const [newTagInput, setNewTagInput] = useState('');
 
   const openEditModal = () => {
-    setEditedSeason(outfit.season);
-    setEditedTags(outfit.tags);
-    setNewTagInput('');
-    setIsEditModalVisible(true);
+    setIsEditModalVisible(false); // Make sure this is closed if it somehow opens
+    navigation.navigate('OutfitBuilderTab', { 
+      editOutfit: outfit 
+    });
   };
 
   const handleSaveEdit = () => {
@@ -198,13 +198,13 @@ export default function OutfitDetailsScreen() {
               </Text>
             </TouchableOpacity>
              <TouchableOpacity 
-              style={styles.statBadge} 
+              style={styles.historyButton} 
               activeOpacity={0.7}
               onPress={() => setIsHistoryModalVisible(true)}
             >
-              <Ionicons name="refresh-outline" size={16} color={Colors.textSecondary} />
-              <Text style={styles.statText}>Worn {outfit.timesWorn} times</Text>
-              <Ionicons name="chevron-forward" size={12} color={Colors.textSecondary} style={{ marginLeft: -2 }} />
+              <Ionicons name="time-outline" size={18} color={Colors.textSecondary} />
+              <Text style={styles.historyButtonText}>View Wear History ({outfit.timesWorn})</Text>
+              <Ionicons name="chevron-forward" size={16} color={Colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
@@ -236,8 +236,10 @@ export default function OutfitDetailsScreen() {
             {outfit.pieces.map((piece, index) => {
               const imageUrl = outfit.images[index];
               return (
-                <View key={index} style={[styles.pieceCard, { width: (width - Spacing.lg * 2 - Spacing.md) / 2 }]}>
-                  <Image source={{ uri: imageUrl }} style={styles.pieceImage} />
+                <View key={index} style={styles.pieceCard}>
+                  <View style={styles.pieceImageContainer}>
+                    <Image source={{ uri: imageUrl }} style={styles.pieceImage} resizeMode="contain" />
+                  </View>
                   <View style={styles.pieceLabelContainer}>
                     <Text style={styles.pieceLabel} numberOfLines={2}>{piece}</Text>
                   </View>
@@ -637,19 +639,21 @@ const styles = StyleSheet.create({
     color: Colors.coral,
     fontWeight: '600',
   },
-  statBadge: {
+  historyButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surfaceWarm,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 4,
-    borderRadius: BorderRadius.sm,
-    gap: 4,
+    backgroundColor: Colors.surface,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 8,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    gap: 6,
   },
-  statText: {
-    ...Typography.caption,
-    color: Colors.textSecondary,
-    fontWeight: '500',
+  historyButtonText: {
+    ...Typography.subhead,
+    color: Colors.text,
+    fontWeight: '600',
   },
   tagsContainer: {
     flexDirection: 'row',
@@ -686,18 +690,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.md,
+    justifyContent: 'center',
   },
   pieceCard: {
+    width: '48%',
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.lg,
     overflow: 'hidden',
     ...Shadows.card,
     marginBottom: Spacing.sm,
   },
+  pieceImageContainer: {
+    width: '100%',
+    aspectRatio: 1,
+    backgroundColor: Colors.surfaceWarm,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   pieceImage: {
     width: '100%',
-    height: 200,
-    backgroundColor: Colors.surfaceWarm,
+    height: '100%',
   },
   pieceLabelContainer: {
     padding: Spacing.sm,
