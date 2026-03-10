@@ -22,9 +22,8 @@ export async function extractOutfitItems(imageUri: string): Promise<ExtractedIte
     const formData = new FormData();
     formData.append('file', fileBlob, 'outfit.jpg');
 
-    // Make sure we use the right IP for local emulator vs web
-    // 10.0.2.2 for Android emulator, localhost for iOS simulator/Web.
-    const apiUrl = Platform.OS === 'android' ? 'http://10.0.2.2:8000/segment' : 'http://localhost:8000/segment';
+    // Pointing to the live Render ML Backend
+    const apiUrl = 'https://wind-co-closet-app.onrender.com/segment';
 
     console.log(`Sending image to ML Server: ${apiUrl}...`);
     const resp = await fetch(apiUrl, {
