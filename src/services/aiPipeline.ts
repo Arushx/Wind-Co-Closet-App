@@ -19,21 +19,27 @@ export async function extractOutfitItems(imageUri: string): Promise<ExtractedIte
       formData.append('file', fileBlob, 'outfit.jpg');
     } else {
       // Native mobile networking layers require an object blob reference format for files.
+      // @ts-ignore - React Native FormData accepts this format
       formData.append('file', {
         uri: imageUri,
         type: 'image/jpeg',
         name: 'outfit.jpg',
-      } as any);
+      });
     }
 
     // Pointing to the live Render ML Backend
     const apiUrl = 'https://wind-co-closet-app.onrender.com/segment';
 
     console.log(`Sending image to ML Server: ${apiUrl}...`);
-    const resp = await fetch(apiUrl, {
+    
+    // Create fetch options - don't set Content-Type header manually
+    // as FormData needs to set it with the boundary parameter
+    const fetchOptions: RequestInit = {
       method: 'POST',
-      body: formData,
-    });
+      body: formData as any, // Cast to bypass TypeScript issues with FormData
+    };
+
+    const resp = await fetch(apiUrl, fetchOptions);
 
     if (!resp.ok) {
       console.warn(`ML API returned ${resp.status}`);
