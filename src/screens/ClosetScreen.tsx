@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, Image, RefreshControl, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, Image, RefreshControl, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../theme';
@@ -13,7 +13,7 @@ interface ClosetScreenProps {
 }
 
 export default function ClosetScreen({ navigation }: ClosetScreenProps) {
-  const { items } = useCloset();
+  const { items, resetCloset } = useCloset();
   const [selectedCategory, setSelectedCategory] = useState<ClothingCategory>('all');
   const [selectedSeason, setSelectedSeason] = useState<'all' | 'spring' | 'summer' | 'fall' | 'winter'>('all');
   const [selectedTag, setSelectedTag] = useState<string>('all');
@@ -32,6 +32,24 @@ export default function ClosetScreen({ navigation }: ClosetScreenProps) {
       setRefreshing(false);
     }, 1000);
   }, []);
+
+  const handleResetCloset = () => {
+    Alert.alert(
+      'Reset Closet',
+      'This will clear all your items and restore the default sample items. Are you sure?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: async () => {
+            await resetCloset();
+            Alert.alert('Success', 'Closet has been reset to initial items');
+          }
+        }
+      ]
+    );
+  };
 
   const categories: { key: ClothingCategory; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }[] = [
     { key: 'all', label: 'All', icon: 'view-grid' },
@@ -138,10 +156,15 @@ export default function ClosetScreen({ navigation }: ClosetScreenProps) {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.container}>
-        <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.header}
+          onLongPress={handleResetCloset}
+          activeOpacity={0.9}
+          delayLongPress={2000}
+        >
           <Text style={styles.title}>My Closet</Text>
           <Text style={styles.itemCount}>{filteredItems.length} items</Text>
-        </View>
+        </TouchableOpacity>
 
         {/* Search Bar */}
         <View style={styles.searchContainer}>

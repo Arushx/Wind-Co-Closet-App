@@ -29,6 +29,7 @@ interface ClosetContextType {
   deleteItem: (id: string) => void;
   addItem: (item: ClothingItem) => void;
   addItems: (items: ClothingItem[]) => void;
+  resetCloset: () => Promise<void>;
 }
 
 const ClosetContext = createContext<ClosetContextType | undefined>(undefined);
@@ -290,10 +291,22 @@ export function ClosetProvider({ children }: { children: ReactNode }) {
       try {
         const stored = await AsyncStorage.getItem(CLOSET_STORAGE_KEY);
         if (stored !== null) {
-          setItems(JSON.parse(stored));
+          const parsedItems = JSON.parse(stored);
+          // If storage is empty or invalid, use initial items
+          if (Array.isArray(parsedItems) && parsedItems.length > 0) {
+            setItems(parsedItems);
+          } else {
+            console.log('Storage empty, using initial items');
+            setItems(INITIAL_ITEMS);
+          }
+        } else {
+          // No storage found, use initial items
+          console.log('No storage found, using initial items');
+          setItems(INITIAL_ITEMS);
         }
       } catch (e) {
         console.error('Failed to load closet items', e);
+        setItems(INITIAL_ITEMS);
       } finally {
         setIsLoaded(true);
       }
@@ -327,8 +340,18 @@ export function ClosetProvider({ children }: { children: ReactNode }) {
     setItems(prevItems => [...prevItems, ...newItems]);
   };
 
+  const resetCloset = async () => {
+    try {
+      await AsyncStorage.removeItem(CLOSET_STORAGE_KEY);
+      setItems(INITIAL_ITEMS);
+      console.log('Closet reset to initial items');
+    } catch (e) {
+      console.error('Failed to reset closet', e);
+    }
+  };
+
   return (
-    <ClosetContext.Provider value={{ items, updateItem, deleteItem, addItem, addItems }}>
+    <ClosetContext.Provider value={{ items, updateItem, deleteItem, addItem, addItems, resetCloset }}>
       {children}
     </ClosetContext.Provider>
   );
