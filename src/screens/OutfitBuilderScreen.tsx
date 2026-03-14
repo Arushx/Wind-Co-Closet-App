@@ -350,7 +350,7 @@ export default function OutfitBuilderScreen() {
             <Text style={styles.sectionTitle}>Outfit Details</Text>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Name</Text>
+              <Text style={styles.label}>Name *</Text>
               <TextInput
                 style={styles.input}
                 placeholder="e.g. Summer Picnic, Conference Look..."
