@@ -1,12 +1,10 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TextInput, TouchableOpacity, Alert, ActivityIndicator, Animated, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, TextInput, TouchableOpacity, Alert, Animated, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../theme';
 import { useCloset } from '../context/ClosetContext';
-import { extractOutfitItems } from '../services/aiPipeline';
 
 type ClothingCategory = 'tops' | 'bottoms' | 'shoes' | 'accessories';
 type Season = 'spring' | 'summer' | 'fall' | 'winter';
@@ -28,21 +26,33 @@ interface AddItemScreenProps {
 }
 
 export default function AddItemScreen({ navigation }: AddItemScreenProps) {
-  const { items, addItem, addItems } = useCloset();
+  const { items, addItems } = useCloset();
   
   const [draftItems, setDraftItems] = useState<DraftItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [newTagInput, setNewTagInput] = useState('');
+  const [minTempInput, setMinTempInput] = useState('10');
+  const [maxTempInput, setMaxTempInput] = useState('25');
+  const [minTempNegative, setMinTempNegative] = useState(false);
+  const [maxTempNegative, setMaxTempNegative] = useState(false);
   const toastOpacity = useRef(new Animated.Value(0)).current;
   const [showToast, setShowToast] = useState(false);
 
-  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
-  const [showCamera, setShowCamera] = useState(false);
-  const [cameraRef, setCameraRef] = useState<CameraView | null>(null);
-  const [isManualMode, setIsManualMode] = useState(false);
-
   const currentItem = draftItems[currentIndex] || null;
+
+  const normalizeTemperature = (value: string, isNegative: boolean) => {
+    const parsed = parseInt(value, 10);
+    const absoluteValue = isNaN(parsed) ? 0 : Math.abs(parsed);
+    return isNegative ? -absoluteValue : absoluteValue;
+  };
+
+  useEffect(() => {
+    if (!currentItem) return;
+    setMinTempInput(String(Math.abs(currentItem.weatherRating.minTemp)));
+    setMaxTempInput(String(Math.abs(currentItem.weatherRating.maxTemp)));
+    setMinTempNegative(currentItem.weatherRating.minTemp < 0);
+    setMaxTempNegative(currentItem.weatherRating.maxTemp < 0);
+  }, [currentIndex, currentItem?.id]);
 
   const categories: { key: ClothingCategory; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }[] = [
     { key: 'tops', label: 'Tops', icon: 'tshirt-crew' },
@@ -86,11 +96,9 @@ export default function AddItemScreen({ navigation }: AddItemScreenProps) {
     updateCurrentItem({ selectedSeasons: newSeasons });
   };
 
-  const processImage = async (uri: string, isManual: boolean = false) => {
-    setIsAnalyzing(!isManual);
+  const processImage = async (uri: string) => {
     try {
-      // Temporary fallback UI so they see what they just took
-      const fallbackItem: DraftItem = {
+      const item: DraftItem = {
         id: Date.now().toString(),
         name: '',
         brand: '',
@@ -101,65 +109,36 @@ export default function AddItemScreen({ navigation }: AddItemScreenProps) {
         tags: [],
         weatherRating: { minTemp: 10, maxTemp: 25 },
       };
-      setDraftItems([fallbackItem]);
+      setDraftItems([item]);
       setCurrentIndex(0);
-
-      if (!isManual) {
-        const aiItems = await extractOutfitItems(uri);
-        
-        if (aiItems && aiItems.length > 0) {
-          setDraftItems(aiItems.map(ai => ({
-            id: ai.id,
-            name: '',
-            brand: '',
-            category: ai.category,
-            selectedSeasons: (ai.seasons as Season[]) || ['spring', 'summer', 'fall', 'winter'],
-            imageUri: ai.imageUri,
-            color: ai.color || '#CCCCCC',
-            weatherRating: ai.weatherRating || { minTemp: 10, maxTemp: 25 },
-            tags: [],
-          })));
-          setCurrentIndex(0);
-        }
-      }
     } catch (e) {
-       console.log("Failed ML", e);
-    } finally {
-      setIsAnalyzing(false);
+      console.log('Failed to process image', e);
     }
   };
 
-  const handleTakePhoto = async (isManual: boolean = false) => {
-    if (!cameraPermission?.granted) {
-      const permission = await requestCameraPermission();
-      if (!permission.granted) {
-        Alert.alert('Permission Required', 'Camera permission is required to take photos.');
-        return;
-      }
-    }
-    // We will pass the isManual flag to a ref to attach to the camera capture if needed, 
-    // but a cleaner way is just a state
-    setIsManualMode(isManual);
-    setShowCamera(true);
-  };
+  const handleTakePhoto = async () => {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
 
-  const capturePhoto = async () => {
-    if (cameraRef) {
-      try {
-        const photo = await cameraRef.takePictureAsync();
-        if (photo) {
-          setShowCamera(false);
-          await processImage(photo.uri, isManualMode);
-        }
-      } catch (error) {
-        Alert.alert('Error', 'Failed to take photo. Please try again.');
-      }
+    if (!permission.granted) {
+      Alert.alert('Permission Required', 'Camera permission is required to take photos.');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      await processImage(result.assets[0].uri);
     }
   };
 
-  const handlePickImage = async (isManual: boolean = false) => {
+  const handlePickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
+
     if (!permission.granted) {
       Alert.alert('Permission Required', 'Gallery permission is required to select photos.');
       return;
@@ -173,14 +152,20 @@ export default function AddItemScreen({ navigation }: AddItemScreenProps) {
     });
 
     if (!result.canceled && result.assets[0]) {
-      await processImage(result.assets[0].uri, isManual);
+      await processImage(result.assets[0].uri);
     }
   };
 
   const handleSave = () => {
     if (draftItems.length === 0) return;
 
+    const normalizedMin = normalizeTemperature(minTempInput, minTempNegative);
+    const normalizedMax = normalizeTemperature(maxTempInput, maxTempNegative);
+
     const newClothingItems = draftItems.map((item, index) => {
+      const weatherRating = index === currentIndex
+        ? { minTemp: normalizedMin, maxTemp: normalizedMax }
+        : item.weatherRating;
       const defaultName = `New ${item.category.charAt(0).toUpperCase() + item.category.slice(1)} ${Date.now().toString().slice(-4) + index}`;
       return {
         id: item.id,
@@ -188,7 +173,7 @@ export default function AddItemScreen({ navigation }: AddItemScreenProps) {
         brand: item.brand.trim() || 'Unknown',
         category: item.category,
         color: item.color || '#CCCCCC',
-        weatherRating: item.weatherRating,
+        weatherRating,
         status: 'clean' as const,
         imageUrl: item.imageUri,
         seasons: item.selectedSeasons,
@@ -220,39 +205,6 @@ export default function AddItemScreen({ navigation }: AddItemScreenProps) {
       navigation.goBack();
     });
   };
-
-
-
-  if (showCamera) {
-    return (
-      <View style={styles.cameraContainer}>
-        <CameraView 
-          style={styles.camera} 
-          facing="back"
-          ref={(ref) => setCameraRef(ref)}
-        >
-          <View style={styles.cameraOverlay}>
-            <TouchableOpacity 
-              style={styles.cameraCloseButton}
-              onPress={() => setShowCamera(false)}
-            >
-              <Ionicons name="close" size={32} color="#FFF" />
-            </TouchableOpacity>
-            
-            <View style={styles.cameraBottomControls}>
-              <TouchableOpacity 
-                style={styles.captureButton}
-                onPress={capturePhoto}
-              >
-                <View style={styles.captureButtonInner} />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </CameraView>
-      </View>
-    );
-  }
-
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <KeyboardAvoidingView 
@@ -273,12 +225,6 @@ export default function AddItemScreen({ navigation }: AddItemScreenProps) {
             <View style={styles.imagePreviewContainer}>
               <View style={{ width: '100%', aspectRatio: 1, borderRadius: BorderRadius.lg, backgroundColor: Colors.border, overflow: 'hidden' }}>
                 <Image source={{ uri: currentItem?.imageUri }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
-                {isAnalyzing && (
-                  <View style={styles.loadingOverlay}>
-                    <ActivityIndicator size="large" color={Colors.primary} />
-                    <Text style={styles.loadingText}>Extracting clothing...</Text>
-                  </View>
-                )}
               </View>
 
               {draftItems.length > 1 && (
@@ -303,14 +249,14 @@ export default function AddItemScreen({ navigation }: AddItemScreenProps) {
               <View style={styles.imageActions}>
                 <TouchableOpacity 
                   style={[styles.photoButton, styles.photoButtonSecondary]}
-                  onPress={() => handleTakePhoto(false)}
+                  onPress={handleTakePhoto}
                 >
                   <MaterialCommunityIcons name="camera" size={20} color={Colors.primary} />
                   <Text style={styles.photoButtonSecondaryText}>Retake Photo</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   style={[styles.photoButton, styles.photoButtonSecondary]}
-                  onPress={() => handlePickImage(false)}
+                  onPress={handlePickImage}
                 >
                   <MaterialCommunityIcons name="image" size={20} color={Colors.primary} />
                   <Text style={styles.photoButtonSecondaryText}>Choose Gallery</Text>
@@ -318,42 +264,22 @@ export default function AddItemScreen({ navigation }: AddItemScreenProps) {
               </View>
             </View>
           ) : (
-            <View style={{ gap: Spacing.md }}>
-              <View style={styles.photoButtonsContainer}>
-                <TouchableOpacity 
-                  style={styles.photoButton}
-                  onPress={() => handleTakePhoto(false)}
-                >
-                  <MaterialCommunityIcons name="auto-fix" size={32} color={Colors.primary} />
-                  <Text style={styles.photoButtonText}>Take Photo (AI)</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={styles.photoButton}
-                  onPress={() => handlePickImage(false)}
-                >
-                  <MaterialCommunityIcons name="image-auto-adjust" size={32} color={Colors.primary} />
-                  <Text style={styles.photoButtonText}>Gallery (AI)</Text>
-                </TouchableOpacity>
-              </View>
+            <View style={styles.photoButtonsContainer}>
+              <TouchableOpacity 
+                style={styles.photoButton}
+                onPress={handleTakePhoto}
+              >
+                <MaterialCommunityIcons name="camera" size={32} color={Colors.primary} />
+                <Text style={styles.photoButtonText}>Take Photo</Text>
+              </TouchableOpacity>
 
-              <View style={styles.photoButtonsContainer}>
-                <TouchableOpacity 
-                  style={[styles.photoButton, { backgroundColor: Colors.surfaceWarm, borderColor: Colors.borderLight }]}
-                  onPress={() => handleTakePhoto(true)}
-                >
-                  <MaterialCommunityIcons name="camera" size={32} color={Colors.textSecondary} />
-                  <Text style={[styles.photoButtonText, { color: Colors.textSecondary }]}>Add Manually</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={[styles.photoButton, { backgroundColor: Colors.surfaceWarm, borderColor: Colors.borderLight }]}
-                  onPress={() => handlePickImage(true)}
-                >
-                  <MaterialCommunityIcons name="image" size={32} color={Colors.textSecondary} />
-                  <Text style={[styles.photoButtonText, { color: Colors.textSecondary }]}>Gallery Manually</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity 
+                style={styles.photoButton}
+                onPress={handlePickImage}
+              >
+                <MaterialCommunityIcons name="image" size={32} color={Colors.primary} />
+                <Text style={styles.photoButtonText}>Choose from Gallery</Text>
+              </TouchableOpacity>
             </View>
           )}
         </View>
@@ -458,9 +384,9 @@ export default function AddItemScreen({ navigation }: AddItemScreenProps) {
               </View>
             </View>
 
-            {/* AI Detected Properties */}
+            {/* Item Properties */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Detected Properties</Text>
+              <Text style={styles.sectionTitle}>Item Properties</Text>
               
               <View style={{ marginBottom: Spacing.md }}>
                 <Text style={styles.label}>Dominant Color</Text>
@@ -474,27 +400,83 @@ export default function AddItemScreen({ navigation }: AddItemScreenProps) {
                 <Text style={styles.label}>Weather Rating (°C)</Text>
                 <Text style={styles.sectionSubtitle}>Ideal temperature range for this item</Text>
                 <View style={{ flexDirection: 'row', gap: Spacing.sm, alignItems: 'center' }}>
-                  <View style={{ flex: 1 }}>
+                  <View style={styles.temperatureInputGroup}>
+                    <TouchableOpacity
+                      style={[styles.temperatureSignButton, minTempNegative && styles.temperatureSignButtonActive]}
+                      onPress={() => {
+                        const nextValue = !minTempNegative;
+                        setMinTempNegative(nextValue);
+                        updateCurrentItem({
+                          weatherRating: {
+                            ...currentItem.weatherRating,
+                            minTemp: normalizeTemperature(minTempInput, nextValue),
+                          },
+                        });
+                      }}
+                    >
+                      <Text style={[styles.temperatureSignText, minTempNegative && styles.temperatureSignTextActive]}>
+                        {minTempNegative ? '-' : ''}
+                      </Text>
+                    </TouchableOpacity>
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, styles.temperatureValueInput]}
                       keyboardType="numeric"
-                      value={currentItem.weatherRating.minTemp.toString()}
+                      value={minTempInput}
                       onChangeText={(val) => {
-                        const num = parseInt(val, 10);
-                        updateCurrentItem({ weatherRating: { ...currentItem.weatherRating, minTemp: isNaN(num) ? 0 : num } });
+                        if (/^\d*$/.test(val)) {
+                          setMinTempInput(val);
+                        }
+                      }}
+                      onEndEditing={() => {
+                        const value = normalizeTemperature(minTempInput, minTempNegative);
+                        updateCurrentItem({
+                          weatherRating: {
+                            ...currentItem.weatherRating,
+                            minTemp: value,
+                          },
+                        });
+                        setMinTempInput(String(Math.abs(value)));
                       }}
                       placeholder="Min"
                     />
                   </View>
                   <Text style={{ ...Typography.body, color: Colors.textMuted }}>to</Text>
-                  <View style={{ flex: 1 }}>
+                  <View style={styles.temperatureInputGroup}>
+                    <TouchableOpacity
+                      style={[styles.temperatureSignButton, maxTempNegative && styles.temperatureSignButtonActive]}
+                      onPress={() => {
+                        const nextValue = !maxTempNegative;
+                        setMaxTempNegative(nextValue);
+                        updateCurrentItem({
+                          weatherRating: {
+                            ...currentItem.weatherRating,
+                            maxTemp: normalizeTemperature(maxTempInput, nextValue),
+                          },
+                        });
+                      }}
+                    >
+                      <Text style={[styles.temperatureSignText, maxTempNegative && styles.temperatureSignTextActive]}>
+                        {maxTempNegative ? '-' : ''}
+                      </Text>
+                    </TouchableOpacity>
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, styles.temperatureValueInput]}
                       keyboardType="numeric"
-                      value={currentItem.weatherRating.maxTemp.toString()}
+                      value={maxTempInput}
                       onChangeText={(val) => {
-                        const num = parseInt(val, 10);
-                        updateCurrentItem({ weatherRating: { ...currentItem.weatherRating, maxTemp: isNaN(num) ? 0 : num } });
+                        if (/^\d*$/.test(val)) {
+                          setMaxTempInput(val);
+                        }
+                      }}
+                      onEndEditing={() => {
+                        const value = normalizeTemperature(maxTempInput, maxTempNegative);
+                        updateCurrentItem({
+                          weatherRating: {
+                            ...currentItem.weatherRating,
+                            maxTemp: value,
+                          },
+                        });
+                        setMaxTempInput(String(Math.abs(value)));
                       }}
                       placeholder="Max"
                     />
@@ -629,18 +611,6 @@ const styles = StyleSheet.create({
   imagePreviewContainer: {
     gap: Spacing.md,
   },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255,255,255,0.85)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    ...Typography.subhead,
-    color: Colors.primary,
-    fontWeight: '600',
-    marginTop: 8,
-  },
   thumbnailScroll: {
     flexDirection: 'row',
     marginTop: 4,
@@ -666,51 +636,6 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   
-  // Camera
-  cameraContainer: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
-  camera: {
-    flex: 1,
-  },
-  cameraOverlay: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
-  cameraCloseButton: {
-    position: 'absolute',
-    top: 50,
-    right: 20,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cameraBottomControls: {
-    position: 'absolute',
-    bottom: 40,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-  },
-  captureButton: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  captureButtonInner: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#FFF',
-  },
-  
   // Form Inputs
   inputGroup: {
     marginBottom: Spacing.md,
@@ -729,6 +654,36 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
     color: Colors.text,
+  },
+  temperatureInputGroup: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: Spacing.xs,
+  },
+  temperatureSignButton: {
+    width: 44,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: BorderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  temperatureSignButtonActive: {
+    backgroundColor: Colors.accentSoft,
+    borderColor: Colors.accent,
+  },
+  temperatureSignText: {
+    ...Typography.body,
+    color: Colors.textSecondary,
+    fontWeight: '700',
+  },
+  temperatureSignTextActive: {
+    color: Colors.accent,
+  },
+  temperatureValueInput: {
+    flex: 1,
   },
   
   // Category Grid

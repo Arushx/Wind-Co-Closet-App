@@ -284,33 +284,36 @@ export default function SocialLogScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.headerContainer}>
-        <Text style={styles.title}>Social Log</Text>
-        <View style={styles.headerActions}>
-          <TouchableOpacity 
-            style={[styles.filterButton, activeFilterCount > 0 && styles.filterButtonActive]} 
-            onPress={() => setIsFilterModalVisible(true)}
-            activeOpacity={0.7}
-          >
-            <Ionicons 
-              name={activeFilterCount > 0 ? 'options' : 'options-outline'} 
-              size={18} 
-              color={activeFilterCount > 0 ? Colors.surface : Colors.textSecondary} 
-            />
-            <Text style={[styles.filterButtonText, activeFilterCount > 0 && styles.filterButtonTextActive]}>
-              Filters {activeFilterCount > 0 ? `(${activeFilterCount})` : ''}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.filterButton, { backgroundColor: Colors.primary, borderColor: Colors.primary }]} 
-            onPress={openGlobalLogModal}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="add" size={18} color={Colors.surface} />
-            <Text style={[styles.filterButtonTextActive, { fontWeight: '600' }]}>
-              Log Wear
-            </Text>
-          </TouchableOpacity>
+        <View style={styles.headerTopRow}>
+          <Text style={styles.title} numberOfLines={1}>Social Log</Text>
+          <View style={styles.headerActions}>
+            <TouchableOpacity 
+              style={[styles.filterButton, activeFilterCount > 0 && styles.filterButtonActive]} 
+              onPress={() => setIsFilterModalVisible(true)}
+              activeOpacity={0.7}
+            >
+              <Ionicons 
+                name={activeFilterCount > 0 ? 'options' : 'options-outline'} 
+                size={18} 
+                color={activeFilterCount > 0 ? Colors.surface : Colors.textSecondary} 
+              />
+              <Text style={[styles.filterButtonText, activeFilterCount > 0 && styles.filterButtonTextActive]}>
+                Filters {activeFilterCount > 0 ? `(${activeFilterCount})` : ''}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.filterButton, { backgroundColor: Colors.primary, borderColor: Colors.primary }]} 
+              onPress={openGlobalLogModal}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="add" size={18} color={Colors.surface} />
+              <Text style={[styles.filterButtonTextActive, { fontWeight: '600' }]}>
+                Log Wear
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
+        <Text style={styles.headerSubtitle}>Track where and when outfits were worn, plus event, audience, and notes.</Text>
       </View>
 
       <FlatList
@@ -725,9 +728,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.borderLight,
     zIndex: 10,
+  },
+  headerTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: Spacing.md,
   },
   headerActions: {
     flexDirection: 'row',
@@ -735,6 +741,12 @@ const styles = StyleSheet.create({
   },
   title: { 
     ...Typography.largeTitle,
+    flexShrink: 1,
+  },
+  headerSubtitle: {
+    ...Typography.caption,
+    color: Colors.textSecondary,
+    marginTop: Spacing.xs,
   },
   filterButton: {
     flexDirection: 'row',

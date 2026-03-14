@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, Image, RefreshControl, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
@@ -14,6 +14,8 @@ interface ClosetScreenProps {
 
 export default function ClosetScreen({ navigation }: ClosetScreenProps) {
   const { items, resetCloset } = useCloset();
+  const listRef = useRef<FlatList<ClothingItem>>(null);
+  const previousItemCountRef = useRef(items.length);
   const [selectedCategory, setSelectedCategory] = useState<ClothingCategory>('all');
   const [selectedSeason, setSelectedSeason] = useState<'all' | 'spring' | 'summer' | 'fall' | 'winter'>('all');
   const [selectedTag, setSelectedTag] = useState<string>('all');
@@ -32,6 +34,13 @@ export default function ClosetScreen({ navigation }: ClosetScreenProps) {
       setRefreshing(false);
     }, 1000);
   }, []);
+
+  useEffect(() => {
+    if (items.length > previousItemCountRef.current) {
+      listRef.current?.scrollToOffset({ offset: 0, animated: true });
+    }
+    previousItemCountRef.current = items.length;
+  }, [items.length]);
 
   const handleResetCloset = () => {
     Alert.alert(
@@ -60,7 +69,7 @@ export default function ClosetScreen({ navigation }: ClosetScreenProps) {
   ];
 
   const seasons: { key: 'all' | 'spring' | 'summer' | 'fall' | 'winter'; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }[] = [
-    { key: 'all', label: 'All Weather', icon: 'cloud' },
+    { key: 'all', label: 'All Seasons', icon: 'cloud' },
     { key: 'spring', label: 'Spring', icon: 'flower' },
     { key: 'summer', label: 'Summer', icon: 'white-balance-sunny' },
     { key: 'fall', label: 'Fall', icon: 'leaf' },
@@ -119,11 +128,11 @@ export default function ClosetScreen({ navigation }: ClosetScreenProps) {
       activeOpacity={0.7}
       onPress={() => navigation.navigate('ItemDetail', { item })}
     >
-      <View style={[styles.itemImageContainer, { backgroundColor: item.color }]}>
+      <View style={styles.itemImageContainer}>
         <Image 
           source={{ uri: item.imageUrl }}
           style={styles.itemImage}
-          resizeMode="contain"
+          resizeMode="cover"
         />
       </View>
       
@@ -291,6 +300,7 @@ export default function ClosetScreen({ navigation }: ClosetScreenProps) {
 
         {/* Items Grid */}
         <FlatList
+          ref={listRef}
           style={{ flex: 1 }}
           data={filteredItems}
           renderItem={renderClothingItem}
@@ -419,7 +429,7 @@ const styles = StyleSheet.create({
   itemImageContainer: {
     width: '100%',
     aspectRatio: 1,
-    backgroundColor: Colors.surfaceWarm,
+    backgroundColor: 'transparent',
   },
   itemImage: {
     width: '100%',

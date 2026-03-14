@@ -15,6 +15,12 @@ const SLOT_TO_CATEGORY: Record<SlotKey, string> = {
   Shoes: 'shoes',
   Accessory: 'accessories',
 };
+const CATEGORY_TO_SLOT: Record<string, SlotKey> = {
+  tops: 'Top',
+  bottoms: 'Bottom',
+  shoes: 'Shoes',
+  accessories: 'Accessory',
+};
 
 export default function OutfitBuilderScreen() {
   const { items } = useCloset();
@@ -22,6 +28,8 @@ export default function OutfitBuilderScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const initialOutfit = route.params?.editOutfit;
+  const prefillItemId = route.params?.prefillItemId;
+  const prefillRequestId = route.params?.prefillRequestId;
 
   const [name, setName] = useState('');
   const [season, setSeason] = useState(SEASONS[0]);
@@ -75,6 +83,21 @@ export default function OutfitBuilderScreen() {
       setPieces(hydratedPieces);
     }
   }, [initialOutfit, items]);
+
+  React.useEffect(() => {
+    if (!prefillItemId || !prefillRequestId || initialOutfit || items.length === 0) return;
+
+    const prefillItem = items.find(item => item.id === prefillItemId);
+    if (!prefillItem) return;
+
+    const slot = CATEGORY_TO_SLOT[prefillItem.category];
+    if (!slot) return;
+
+    setPieces(prev => ({
+      ...prev,
+      [slot]: prefillItem,
+    }));
+  }, [prefillItemId, prefillRequestId, initialOutfit, items]);
 
   const [pickerVisible, setPickerVisible] = useState(false);
   const [activeSlot, setActiveSlot] = useState<SlotKey | null>(null);
@@ -229,6 +252,10 @@ export default function OutfitBuilderScreen() {
           </TouchableOpacity>
         </View>
       </View>
+
+      <Text style={styles.shuffleHelpText}>
+        Shuffle auto-fills your outfit with random pieces. Turn on weather shuffle to prioritize items suited to current conditions.
+      </Text>
 
       {/* Weather Toggle */}
       <View style={styles.weatherToggleRow}>
@@ -488,6 +515,13 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.borderLight,
   },
   title: { ...Typography.title },
+  shuffleHelpText: {
+    ...Typography.caption,
+    color: Colors.textSecondary,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.xs,
+    paddingBottom: Spacing.sm,
+  },
   clearText: { ...Typography.subhead, color: Colors.coral, fontWeight: '600' },
   container: { paddingBottom: 150 },
   

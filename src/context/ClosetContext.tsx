@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Image } from 'react-native';
 
 type ClothingCategory = 'tops' | 'bottoms' | 'shoes' | 'accessories';
 type ClothingStatus = 'clean' | 'dirty' | 'laundry';
@@ -34,6 +35,56 @@ interface ClosetContextType {
 
 const ClosetContext = createContext<ClosetContextType | undefined>(undefined);
 
+const CLASSIC_WHITE_TSHIRT_URI = Image.resolveAssetSource(require('../../assets/closet items/classic white t-shirt.png')).uri;
+const NAVY_BLUE_HOODIE_URI = Image.resolveAssetSource(require('../../assets/closet items/navy blue hoodie.png')).uri;
+const STRIPED_SUMMER_BLOUSE_URI = Image.resolveAssetSource(require('../../assets/closet items/striped summer blouse.png')).uri;
+const BLACK_LEATHER_JACKET_URI = Image.resolveAssetSource(require('../../assets/closet items/black leather jacket.png')).uri;
+const GREEN_FLANNEL_SHIRT_URI = Image.resolveAssetSource(require('../../assets/closet items/green flannel shirt.png')).uri;
+const BLUE_DENIM_JEANS_URI = Image.resolveAssetSource(require('../../assets/closet items/blue denim jeans.png')).uri;
+const BLACK_DRESS_PANTS_URI = Image.resolveAssetSource(require('../../assets/closet items/black dress pants.png')).uri;
+const KHAKI_SHORTS_URI = Image.resolveAssetSource(require('../../assets/closet items/khaki shorts.png')).uri;
+const GRAY_SWEATPANTS_URI = Image.resolveAssetSource(require('../../assets/closet items/gray sweatpants.png')).uri;
+const PLAID_SKIRT_URI = Image.resolveAssetSource(require('../../assets/closet items/plaid skirt.png')).uri;
+const WHITE_SNEAKERS_URI = Image.resolveAssetSource(require('../../assets/closet items/white sneakers.png')).uri;
+const BROWN_LEATHER_BOOTS_URI = Image.resolveAssetSource(require('../../assets/closet items/brown leather boots.png')).uri;
+const BLACK_RUNNING_SHOES_URI = Image.resolveAssetSource(require('../../assets/closet items/black running shoes.png')).uri;
+const BEIGE_SANDALS_URI = Image.resolveAssetSource(require('../../assets/closet items/beige sandals.png')).uri;
+const GRAY_WOOL_BEANIE_URI = Image.resolveAssetSource(require('../../assets/closet items/gray wool beanie.png')).uri;
+const BLACK_LEATHER_BELT_URI = Image.resolveAssetSource(require('../../assets/closet items/black leather belt.png')).uri;
+const PATTERNED_SCARF_URI = Image.resolveAssetSource(require('../../assets/closet items/patterned scarf.png')).uri;
+const CANVAS_BACKPACK_URI = Image.resolveAssetSource(require('../../assets/closet items/canvas backpack.png')).uri;
+const AVIATOR_SUNGLASSES_URI = Image.resolveAssetSource(require('../../assets/closet items/aviator sunglasses.png')).uri;
+const RED_BASEBALL_CAP_URI = Image.resolveAssetSource(require('../../assets/closet items/red baseball cap.png')).uri;
+
+const LOCAL_IMAGE_BY_ID: Record<string, string> = {
+  '1': CLASSIC_WHITE_TSHIRT_URI,
+  '2': NAVY_BLUE_HOODIE_URI,
+  '3': STRIPED_SUMMER_BLOUSE_URI,
+  '4': BLACK_LEATHER_JACKET_URI,
+  '5': GREEN_FLANNEL_SHIRT_URI,
+  '6': BLUE_DENIM_JEANS_URI,
+  '7': BLACK_DRESS_PANTS_URI,
+  '8': KHAKI_SHORTS_URI,
+  '9': GRAY_SWEATPANTS_URI,
+  '10': PLAID_SKIRT_URI,
+  '11': WHITE_SNEAKERS_URI,
+  '12': BROWN_LEATHER_BOOTS_URI,
+  '13': BLACK_RUNNING_SHOES_URI,
+  '14': BEIGE_SANDALS_URI,
+  '15': GRAY_WOOL_BEANIE_URI,
+  '16': BLACK_LEATHER_BELT_URI,
+  '17': PATTERNED_SCARF_URI,
+  '18': CANVAS_BACKPACK_URI,
+  '19': AVIATOR_SUNGLASSES_URI,
+  '20': RED_BASEBALL_CAP_URI,
+};
+
+const applyLocalImageOverrides = (items: ClothingItem[]): ClothingItem[] =>
+  items.map(item => ({
+    ...item,
+    imageUrl: LOCAL_IMAGE_BY_ID[item.id] || item.imageUrl,
+  }));
+
 const INITIAL_ITEMS: ClothingItem[] = [
   // Tops
   {
@@ -44,7 +95,7 @@ const INITIAL_ITEMS: ClothingItem[] = [
     color: '#FFFFFF',
     weatherRating: { minTemp: 15, maxTemp: 30 },
     status: 'clean',
-    imageUrl: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400',
+    imageUrl: CLASSIC_WHITE_TSHIRT_URI,
     seasons: ['spring', 'summer', 'fall'],
     tags: ['casual', 'basics'],
   },
@@ -56,7 +107,7 @@ const INITIAL_ITEMS: ClothingItem[] = [
     color: '#001F3F',
     weatherRating: { minTemp: 5, maxTemp: 20 },
     status: 'clean',
-    imageUrl: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400',
+    imageUrl: NAVY_BLUE_HOODIE_URI,
     seasons: ['fall', 'winter', 'spring'],
     tags: ['casual', 'sports', 'comfortable'],
   },
@@ -68,7 +119,7 @@ const INITIAL_ITEMS: ClothingItem[] = [
     color: '#FFE5E5',
     weatherRating: { minTemp: 18, maxTemp: 35 },
     status: 'clean',
-    imageUrl: 'https://images.unsplash.com/photo-1618932260643-eee4a2f652a6?w=400',
+    imageUrl: STRIPED_SUMMER_BLOUSE_URI,
     seasons: ['spring', 'summer'],
     tags: ['casual', 'feminine', 'work'],
   },
@@ -80,7 +131,7 @@ const INITIAL_ITEMS: ClothingItem[] = [
     color: '#000000',
     weatherRating: { minTemp: 0, maxTemp: 15 },
     status: 'clean',
-    imageUrl: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400',
+    imageUrl: BLACK_LEATHER_JACKET_URI,
     seasons: ['fall', 'winter', 'spring'],
     tags: ['formal', 'edgy', 'leather'],
   },
@@ -92,7 +143,7 @@ const INITIAL_ITEMS: ClothingItem[] = [
     color: '#2E8B57',
     weatherRating: { minTemp: 10, maxTemp: 20 },
     status: 'laundry',
-    imageUrl: 'https://images.unsplash.com/photo-1603252110971-b8a57087be18?w=400',
+    imageUrl: GREEN_FLANNEL_SHIRT_URI,
     seasons: ['fall', 'winter'],
     tags: ['casual', 'outdoor', 'layering'],
   },
@@ -105,7 +156,7 @@ const INITIAL_ITEMS: ClothingItem[] = [
     color: '#4169E1',
     weatherRating: { minTemp: 5, maxTemp: 25 },
     status: 'clean',
-    imageUrl: 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=400',
+    imageUrl: BLUE_DENIM_JEANS_URI,
     seasons: ['spring', 'summer', 'fall', 'winter'],
     tags: ['casual', 'basics', 'denim'],
   },
@@ -117,7 +168,7 @@ const INITIAL_ITEMS: ClothingItem[] = [
     color: '#000000',
     weatherRating: { minTemp: 10, maxTemp: 25 },
     status: 'clean',
-    imageUrl: 'https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=400',
+    imageUrl: BLACK_DRESS_PANTS_URI,
     seasons: ['spring', 'summer', 'fall', 'winter'],
     tags: ['formal', 'work', 'professional'],
   },
@@ -129,7 +180,7 @@ const INITIAL_ITEMS: ClothingItem[] = [
     color: '#C3B091',
     weatherRating: { minTemp: 20, maxTemp: 35 },
     status: 'dirty',
-    imageUrl: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=400',
+    imageUrl: KHAKI_SHORTS_URI,
     seasons: ['summer'],
     tags: ['casual', 'summer', 'comfortable'],
   },
@@ -141,7 +192,7 @@ const INITIAL_ITEMS: ClothingItem[] = [
     color: '#808080',
     weatherRating: { minTemp: 5, maxTemp: 20 },
     status: 'clean',
-    imageUrl: 'https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=400',
+    imageUrl: GRAY_SWEATPANTS_URI,
     seasons: ['fall', 'winter', 'spring'],
     tags: ['sports', 'comfortable', 'casual'],
   },
@@ -153,7 +204,7 @@ const INITIAL_ITEMS: ClothingItem[] = [
     color: '#8B4513',
     weatherRating: { minTemp: 12, maxTemp: 25 },
     status: 'clean',
-    imageUrl: 'https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=400',
+    imageUrl: PLAID_SKIRT_URI,
     seasons: ['spring', 'fall'],
     tags: ['casual', 'vintage', 'pattern'],
   },
@@ -166,7 +217,7 @@ const INITIAL_ITEMS: ClothingItem[] = [
     color: '#FFFFFF',
     weatherRating: { minTemp: 10, maxTemp: 30 },
     status: 'clean',
-    imageUrl: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400',
+    imageUrl: WHITE_SNEAKERS_URI,
     seasons: ['spring', 'summer', 'fall'],
     tags: ['casual', 'sports', 'comfortable'],
   },
@@ -178,7 +229,7 @@ const INITIAL_ITEMS: ClothingItem[] = [
     color: '#8B4513',
     weatherRating: { minTemp: -10, maxTemp: 15 },
     status: 'clean',
-    imageUrl: 'https://images.unsplash.com/photo-1608256246200-53e635b5b65f?w=400',
+    imageUrl: BROWN_LEATHER_BOOTS_URI,
     seasons: ['fall', 'winter'],
     tags: ['formal', 'durable', 'leather'],
   },
@@ -190,7 +241,7 @@ const INITIAL_ITEMS: ClothingItem[] = [
     color: '#000000',
     weatherRating: { minTemp: 5, maxTemp: 30 },
     status: 'dirty',
-    imageUrl: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400',
+    imageUrl: BLACK_RUNNING_SHOES_URI,
     seasons: ['spring', 'summer', 'fall'],
     tags: ['sports', 'athletic', 'comfortable'],
   },
@@ -202,7 +253,7 @@ const INITIAL_ITEMS: ClothingItem[] = [
     color: '#F5DEB3',
     weatherRating: { minTemp: 18, maxTemp: 35 },
     status: 'clean',
-    imageUrl: 'https://images.unsplash.com/photo-1603487742131-4160ec999306?w=400',
+    imageUrl: BEIGE_SANDALS_URI,
     seasons: ['summer'],
     tags: ['casual', 'summer', 'comfortable'],
   },
@@ -215,7 +266,7 @@ const INITIAL_ITEMS: ClothingItem[] = [
     color: '#696969',
     weatherRating: { minTemp: -15, maxTemp: 10 },
     status: 'clean',
-    imageUrl: 'https://images.unsplash.com/photo-1576871337622-98d48d1cf531?w=400',
+    imageUrl: GRAY_WOOL_BEANIE_URI,
     seasons: ['winter'],
     tags: ['cold-weather', 'cozy', 'wool'],
   },
@@ -227,7 +278,7 @@ const INITIAL_ITEMS: ClothingItem[] = [
     color: '#000000',
     weatherRating: { minTemp: -20, maxTemp: 40 },
     status: 'clean',
-    imageUrl: 'https://images.unsplash.com/photo-1624222247344-550fb60583aa?w=400',
+    imageUrl: BLACK_LEATHER_BELT_URI,
     seasons: ['spring', 'summer', 'fall', 'winter'],
     tags: ['formal', 'leather', 'basics'],
   },
@@ -239,7 +290,7 @@ const INITIAL_ITEMS: ClothingItem[] = [
     color: '#DEB887',
     weatherRating: { minTemp: -10, maxTemp: 12 },
     status: 'clean',
-    imageUrl: 'https://images.unsplash.com/photo-1520903920243-00d872a2d1c9?w=400',
+    imageUrl: PATTERNED_SCARF_URI,
     seasons: ['fall', 'winter'],
     tags: ['formal', 'pattern', 'luxury'],
   },
@@ -251,7 +302,7 @@ const INITIAL_ITEMS: ClothingItem[] = [
     color: '#FFD700',
     weatherRating: { minTemp: -10, maxTemp: 35 },
     status: 'clean',
-    imageUrl: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400',
+    imageUrl: CANVAS_BACKPACK_URI,
     seasons: ['spring', 'summer', 'fall', 'winter'],
     tags: ['casual', 'outdoor', 'practical'],
   },
@@ -263,7 +314,7 @@ const INITIAL_ITEMS: ClothingItem[] = [
     color: '#C0C0C0',
     weatherRating: { minTemp: 15, maxTemp: 40 },
     status: 'clean',
-    imageUrl: 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=400',
+    imageUrl: AVIATOR_SUNGLASSES_URI,
     seasons: ['spring', 'summer'],
     tags: ['summer', 'protective', 'classic'],
   },
@@ -275,14 +326,14 @@ const INITIAL_ITEMS: ClothingItem[] = [
     color: '#FF0000',
     weatherRating: { minTemp: 10, maxTemp: 35 },
     status: 'laundry',
-    imageUrl: 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400',
+    imageUrl: RED_BASEBALL_CAP_URI,
     seasons: ['spring', 'summer', 'fall'],
     tags: ['casual', 'sports', 'summer'],
   },
 ];
 
 export function ClosetProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<ClothingItem[]>(INITIAL_ITEMS);
+  const [items, setItems] = useState<ClothingItem[]>(applyLocalImageOverrides(INITIAL_ITEMS));
   const [isLoaded, setIsLoaded] = useState(false);
   const CLOSET_STORAGE_KEY = '@wind_co_closet_items_v2';
 
@@ -294,19 +345,19 @@ export function ClosetProvider({ children }: { children: ReactNode }) {
           const parsedItems = JSON.parse(stored);
           // If storage is empty or invalid, use initial items
           if (Array.isArray(parsedItems) && parsedItems.length > 0) {
-            setItems(parsedItems);
+            setItems(applyLocalImageOverrides(parsedItems));
           } else {
             console.log('Storage empty, using initial items');
-            setItems(INITIAL_ITEMS);
+            setItems(applyLocalImageOverrides(INITIAL_ITEMS));
           }
         } else {
           // No storage found, use initial items
           console.log('No storage found, using initial items');
-          setItems(INITIAL_ITEMS);
+          setItems(applyLocalImageOverrides(INITIAL_ITEMS));
         }
       } catch (e) {
         console.error('Failed to load closet items', e);
-        setItems(INITIAL_ITEMS);
+        setItems(applyLocalImageOverrides(INITIAL_ITEMS));
       } finally {
         setIsLoaded(true);
       }
@@ -333,17 +384,17 @@ export function ClosetProvider({ children }: { children: ReactNode }) {
   };
 
   const addItem = (item: ClothingItem) => {
-    setItems(prevItems => [...prevItems, item]);
+    setItems(prevItems => [item, ...prevItems]);
   };
 
   const addItems = (newItems: ClothingItem[]) => {
-    setItems(prevItems => [...prevItems, ...newItems]);
+    setItems(prevItems => [...newItems, ...prevItems]);
   };
 
   const resetCloset = async () => {
     try {
       await AsyncStorage.removeItem(CLOSET_STORAGE_KEY);
-      setItems(INITIAL_ITEMS);
+      setItems(applyLocalImageOverrides(INITIAL_ITEMS));
       console.log('Closet reset to initial items');
     } catch (e) {
       console.error('Failed to reset closet', e);

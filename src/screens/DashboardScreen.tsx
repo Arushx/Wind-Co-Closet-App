@@ -219,7 +219,10 @@ export default function DashboardScreen({ navigation }: any) {
             <Text style={styles.sectionTitle}>Suggested For You</Text>
             <TouchableOpacity 
               style={styles.suggestionCard}
-              onPress={() => navigation.navigate('ClosetTab')}
+              onPress={() => navigation.navigate('OutfitBuilderTab', {
+                prefillItemId: suggestedItem.id,
+                prefillRequestId: Date.now(),
+              })}
             >
               <Image source={{ uri: suggestedItem.imageUrl }} style={styles.suggestionImg} resizeMode="contain" />
               <View style={styles.suggestionInfo}>

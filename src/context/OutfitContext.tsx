@@ -53,10 +53,22 @@ export const OutfitProvider = ({ children }: { children: React.ReactNode }) => {
     const loadData = async () => {
       try {
         const storedOutfits = await AsyncStorage.getItem(OUTFIT_STORAGE_KEY);
-        if (storedOutfits !== null) setOutfits(JSON.parse(storedOutfits));
+        if (storedOutfits !== null) {
+          const parsedOutfits = JSON.parse(storedOutfits);
+          if (Array.isArray(parsedOutfits)) {
+            setOutfits(currentOutfits => currentOutfits.length > 0 ? currentOutfits : parsedOutfits);
+          }
+        }
         
         const storedEvents = await AsyncStorage.getItem(EVENTS_STORAGE_KEY);
-        if (storedEvents !== null) setEventDefaultAudiences(JSON.parse(storedEvents));
+        if (storedEvents !== null) {
+          const parsedEvents = JSON.parse(storedEvents);
+          if (parsedEvents && typeof parsedEvents === 'object') {
+            setEventDefaultAudiences(currentEvents =>
+              Object.keys(currentEvents).length > 0 ? currentEvents : parsedEvents
+            );
+          }
+        }
       } catch (e) {
         console.error('Failed to load outfit data', e);
       } finally {
