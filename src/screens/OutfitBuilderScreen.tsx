@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, Modal, KeyboardAvoidingView, Platform, Alert, Switch, Animated, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,22 +8,8 @@ import { SEASONS, useOutfitContext } from '../context/OutfitContext';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import * as Location from 'expo-location';
 
-type SlotKey = 'Top' | 'Bottom' | 'Shoes' | 'Accessory';
-const SLOT_TO_CATEGORY: Record<SlotKey, string> = {
-  Top: 'tops',
-  Bottom: 'bottoms',
-  Shoes: 'shoes',
-  Accessory: 'accessories',
-};
-const CATEGORY_TO_SLOT: Record<string, SlotKey> = {
-  tops: 'Top',
-  bottoms: 'Bottom',
-  shoes: 'Shoes',
-  accessories: 'Accessory',
-};
-
 export default function OutfitBuilderScreen() {
-  const { items } = useCloset();
+  const { items, categories } = useCloset();
   const { outfits, addOutfit, updateOutfit, allTags } = useOutfitContext();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
@@ -36,12 +22,18 @@ export default function OutfitBuilderScreen() {
   const [tags, setTags] = useState<string[]>([]);
   const [newTagInput, setNewTagInput] = useState('');
 
-  const [pieces, setPieces] = useState<Record<SlotKey, ClothingItem | null>>({
-    Top: null,
-    Bottom: null,
-    Shoes: null,
-    Accessory: null,
-  });
+  const [pieces, setPieces] = useState<Record<string, ClothingItem[]>>({});
+
+  useEffect(() => {
+    // Initialize pieces state with available categories if not already set up
+    if (categories.length > 0 && Object.keys(pieces).length === 0) {
+      const initialPieces: Record<string, ClothingItem[]> = {};
+      categories.forEach(cat => {
+        initialPieces[cat] = [];
+      });
+      setPieces(initialPieces);
+    }
+  }, [categories]);
 
   const [weatherRange, setWeatherRange] = useState<{ min24h: number, max24h: number } | null>(null);
 
@@ -69,20 +61,21 @@ export default function OutfitBuilderScreen() {
       setSeason(initialOutfit.season);
       setTags(initialOutfit.tags);
       
-      const hydratedPieces: Record<SlotKey, ClothingItem | null> = {
-        Top: null, Bottom: null, Shoes: null, Accessory: null
-      };
+      const hydratedPieces: Record<string, ClothingItem[]> = {};
+      categories.forEach(cat => { hydratedPieces[cat] = []; });
       
       initialOutfit.pieces.forEach((pieceName: string) => {
         const match = items.find(i => i.name === pieceName);
         if (match) {
-           const slot = Object.keys(SLOT_TO_CATEGORY).find(k => SLOT_TO_CATEGORY[k as SlotKey] === match.category) as SlotKey;
-           if (slot) hydratedPieces[slot] = match;
+           const slot = match.category;
+           if (hydratedPieces[slot] !== undefined) {
+             hydratedPieces[slot].push(match);
+           }
         }
       });
       setPieces(hydratedPieces);
     }
-  }, [initialOutfit, items]);
+  }, [initialOutfit, items, categories]);
 
   React.useEffect(() => {
     if (!prefillItemId || !prefillRequestId || initialOutfit || items.length === 0) return;
@@ -90,43 +83,59 @@ export default function OutfitBuilderScreen() {
     const prefillItem = items.find(item => item.id === prefillItemId);
     if (!prefillItem) return;
 
-    const slot = CATEGORY_TO_SLOT[prefillItem.category];
-    if (!slot) return;
+    const slot = prefillItem.category;
+    if (!slot || !categories.includes(slot)) return;
 
-    setPieces(prev => ({
-      ...prev,
-      [slot]: prefillItem,
-    }));
-  }, [prefillItemId, prefillRequestId, initialOutfit, items]);
+    setPieces(prev => {
+      const slotItems = prev[slot] || [];
+      if (slotItems.some(i => i.id === prefillItem.id)) return prev;
+      return {
+        ...prev,
+        [slot]: [...slotItems, prefillItem],
+      };
+    });
+  }, [prefillItemId, prefillRequestId, initialOutfit, items, categories]);
 
   const [pickerVisible, setPickerVisible] = useState(false);
-  const [activeSlot, setActiveSlot] = useState<SlotKey | null>(null);
+  const [activeSlot, setActiveSlot] = useState<string | null>(null);
   const [weatherShuffle, setWeatherShuffle] = useState(false);
   const [pickerSearch, setPickerSearch] = useState('');
   const toastOpacity = useRef(new Animated.Value(0)).current;
   const [showToast, setShowToast] = useState(false);
 
-  const openPicker = (slot: SlotKey) => {
+  const openPicker = (slot: string) => {
     setActiveSlot(slot);
     setPickerVisible(true);
   };
 
   const selectItemForSlot = (item: ClothingItem) => {
     if (activeSlot) {
-      setPieces(prev => ({ ...prev, [activeSlot]: item }));
+      setPieces(prev => {
+        const slotItems = prev[activeSlot] || [];
+        const isSelected = slotItems.some(i => i.id === item.id);
+        if (isSelected) {
+          return { ...prev, [activeSlot]: slotItems.filter(i => i.id !== item.id) };
+        } else {
+          return { ...prev, [activeSlot]: [...slotItems, item] };
+        }
+      });
     }
-    setPickerVisible(false);
-    setActiveSlot(null);
   };
 
-  const clearSlot = (slot: SlotKey) => {
-    setPieces(prev => ({ ...prev, [slot]: null }));
+  const clearSlotItem = (slot: string, itemId: string) => {
+    setPieces(prev => ({
+      ...prev,
+      [slot]: (prev[slot] || []).filter(i => i.id !== itemId),
+    }));
+  };
+
+  const clearSlot = (slot: string) => {
+    setPieces(prev => ({ ...prev, [slot]: [] }));
   };
 
   const availableItemsForActiveSlot = useMemo(() => {
     if (!activeSlot) return [];
-    const targetCategory = SLOT_TO_CATEGORY[activeSlot];
-    let filtered = items.filter(i => i.category === targetCategory);
+    let filtered = items.filter(i => i.category === activeSlot);
     if (pickerSearch.trim()) {
       const q = pickerSearch.toLowerCase().trim();
       filtered = filtered.filter(i => i.name.toLowerCase().includes(q) || i.brand.toLowerCase().includes(q));
@@ -152,16 +161,16 @@ export default function OutfitBuilderScreen() {
 
   const handleShuffle = () => {
     const currentSeason = getCurrentSeason();
-    const newPieces: Record<SlotKey, ClothingItem | null> = { Top: null, Bottom: null, Shoes: null, Accessory: null };
+    const newPieces: Record<string, ClothingItem[]> = {};
+    categories.forEach(cat => { newPieces[cat] = []; });
     
-    (['Top', 'Bottom', 'Shoes', 'Accessory'] as SlotKey[]).forEach(slot => {
-      const category = SLOT_TO_CATEGORY[slot];
+    categories.forEach(category => {
       let candidates = items.filter(i => i.category === category && i.status === 'clean');
       if (weatherShuffle) {
         candidates = candidates.filter(i => i.seasons && i.seasons.includes(currentSeason as any));
       }
       if (candidates.length > 0) {
-        newPieces[slot] = candidates[Math.floor(Math.random() * candidates.length)];
+        newPieces[category] = [candidates[Math.floor(Math.random() * candidates.length)]];
       }
     });
 
@@ -177,7 +186,7 @@ export default function OutfitBuilderScreen() {
       return;
     }
 
-    const selectedItems = Object.values(pieces).filter(p => p !== null) as ClothingItem[];
+    const selectedItems = Object.values(pieces).flat();
     if (selectedItems.length === 0) {
       Alert.alert('Empty Outfit', 'Please add at least one piece to your outfit.');
       return;
@@ -235,7 +244,9 @@ export default function OutfitBuilderScreen() {
     setName('');
     setSeason(SEASONS[0]);
     setTags([]);
-    setPieces({ Top: null, Bottom: null, Shoes: null, Accessory: null });
+    const clearedPieces: Record<string, ClothingItem[]> = {};
+    categories.forEach(cat => { clearedPieces[cat] = []; });
+    setPieces(clearedPieces);
   };
 
   return (
@@ -277,31 +288,37 @@ export default function OutfitBuilderScreen() {
         >
           
           {/* Flat-Lay Slots */}
-          <View style={styles.flatLayContainer}>
-            {(['Top', 'Bottom', 'Shoes', 'Accessory'] as SlotKey[]).map((slot) => {
-              const item = pieces[slot];
+          <View style={styles.slotsContainer}>
+            {categories.map((slot) => {
+              const slotItems = pieces[slot] || [];
               return (
-                <View key={slot} style={styles.slotWrapper}>
-                  <Text style={styles.slotLabel}>{slot}</Text>
-                  <TouchableOpacity 
-                    style={[styles.slotCard, !item && styles.slotCardEmpty]} 
-                    onPress={() => openPicker(slot)}
-                    activeOpacity={0.8}
-                  >
-                    {item ? (
-                      <>
+                <View key={slot} style={styles.slotRow}>
+                  <View style={styles.slotHeader}>
+                    <Text style={styles.slotLabel}>{slot.charAt(0).toUpperCase() + slot.slice(1)}</Text>
+                    {slotItems.length > 0 && (
+                      <TouchableOpacity onPress={() => clearSlot(slot)}>
+                        <Text style={styles.clearSlotText}>Clear</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.slotItemsScroll}>
+                    {slotItems.map(item => (
+                      <View key={item.id} style={styles.selectedItemCard}>
                         <Image source={{ uri: item.imageUrl }} style={styles.slotImage} resizeMode="contain" />
-                        <TouchableOpacity style={styles.removeSlotBtn} onPress={() => clearSlot(slot)}>
+                        <TouchableOpacity style={styles.removeSlotBtn} onPress={() => clearSlotItem(slot, item.id)}>
                           <Ionicons name="close-circle" size={24} color={Colors.surface} />
                         </TouchableOpacity>
-                      </>
-                    ) : (
-                      <>
-                        <Ionicons name="add-circle-outline" size={32} color={Colors.textMuted} />
-                        <Text style={styles.emptySlotText}>Tap to add</Text>
-                      </>
-                    )}
-                  </TouchableOpacity>
+                      </View>
+                    ))}
+                    <TouchableOpacity 
+                      style={styles.addSlotCard} 
+                      onPress={() => openPicker(slot)}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons name="add-circle-outline" size={32} color={Colors.textMuted} />
+                      <Text style={styles.emptySlotText}>Add</Text>
+                    </TouchableOpacity>
+                  </ScrollView>
                 </View>
               );
             })}
@@ -310,7 +327,7 @@ export default function OutfitBuilderScreen() {
           {/* Weather Warning */}
           {(() => {
              if (!weatherRange) return null;
-             const selectedPieces = Object.values(pieces).filter(p => p !== null) as ClothingItem[];
+             const selectedPieces = Object.values(pieces).flat();
              if (selectedPieces.length === 0) return null;
              
              let outfitMin = null;
@@ -435,11 +452,11 @@ export default function OutfitBuilderScreen() {
           <View style={styles.modalPhoneFrame}>
             <SafeAreaView style={styles.modalSafeArea} edges={['top']}>
               <View style={styles.modalHeader}>
-                <TouchableOpacity onPress={() => { setPickerVisible(false); setPickerSearch(''); }}>
-                  <Text style={styles.modalActionTextCancel}>Cancel</Text>
+                <View style={{ width: 40 }} />
+                <Text style={styles.modalTitle}>Select {activeSlot ? activeSlot.charAt(0).toUpperCase() + activeSlot.slice(1) : ''}</Text>
+                <TouchableOpacity onPress={() => { setPickerVisible(false); setPickerSearch(''); }} style={{ width: 40, alignItems: 'flex-end' }}>
+                  <Ionicons name="close" size={24} color={Colors.text} />
                 </TouchableOpacity>
-                <Text style={styles.modalTitle}>Select {activeSlot}</Text>
-                <View style={{ width: 50 }} />
               </View>
 
               {/* Picker Search */}
@@ -471,12 +488,12 @@ export default function OutfitBuilderScreen() {
                     {availableItemsForActiveSlot.map((item: ClothingItem) => (
                       <TouchableOpacity
                         key={item.id}
-                        style={[styles.pickerItemCard, pieces[activeSlot!]?.id === item.id && styles.pickerItemCardSelected]}
-                        onPress={() => { selectItemForSlot(item); setPickerSearch(''); }}
+                        style={[styles.pickerItemCard, (activeSlot && (pieces[activeSlot] || []).some(i => i.id === item.id)) && styles.pickerItemCardSelected]}
+                        onPress={() => selectItemForSlot(item)}
                       >
                         <Image source={{ uri: item.imageUrl }} style={styles.pickerItemImage} resizeMode="contain" />
                         <Text style={styles.pickerItemName} numberOfLines={1}>{item.name}</Text>
-                        {pieces[activeSlot!]?.id === item.id && (
+                        {(activeSlot && (pieces[activeSlot] || []).some(i => i.id === item.id)) && (
                           <View style={styles.selectedOverlay}>
                             <Ionicons name="checkmark-circle" size={32} color={Colors.mint} />
                           </View>
@@ -486,6 +503,17 @@ export default function OutfitBuilderScreen() {
                   </View>
                 )}
               </ScrollView>
+              
+              <View style={styles.modalBottomAction}>
+                <TouchableOpacity 
+                  style={styles.modalDoneButton} 
+                  onPress={() => { setPickerVisible(false); setPickerSearch(''); }}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.modalDoneButtonText}>Done</Text>
+                </TouchableOpacity>
+              </View>
+
             </SafeAreaView>
           </View>
         </View>
@@ -525,39 +553,48 @@ const styles = StyleSheet.create({
   clearText: { ...Typography.subhead, color: Colors.coral, fontWeight: '600' },
   container: { paddingBottom: 150 },
   
-  flatLayContainer: {
-    padding: Spacing.lg,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: Spacing.md,
+  slotsContainer: {
+    paddingVertical: Spacing.md,
   },
-  slotWrapper: {
-    width: '47%',
+  slotRow: {
+    marginBottom: Spacing.lg,
+  },
+  slotHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.lg,
     marginBottom: Spacing.sm,
   },
   slotLabel: {
-    ...Typography.label,
-    marginBottom: Spacing.xs,
-    marginLeft: 4,
+    ...Typography.headline,
   },
-  slotCard: {
-    width: '100%',
-    aspectRatio: 1,
+  clearSlotText: {
+    ...Typography.subhead,
+    color: Colors.coral,
+  },
+  slotItemsScroll: {
+    paddingHorizontal: Spacing.lg,
+    gap: Spacing.md,
+  },
+  selectedItemCard: {
+    width: 120,
+    height: 120,
     borderRadius: BorderRadius.xl,
     backgroundColor: Colors.surface,
     ...Shadows.card,
     overflow: 'hidden',
   },
-  slotCardEmpty: {
+  addSlotCard: {
+    width: 120,
+    height: 120,
+    borderRadius: BorderRadius.xl,
     borderWidth: 2,
     borderColor: Colors.border,
     borderStyle: 'dashed',
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: Colors.background,
-    shadowOpacity: 0,
-    elevation: 0,
   },
   slotImage: {
     width: '100%',
@@ -712,6 +749,24 @@ const styles = StyleSheet.create({
   },
   modalTitle: { ...Typography.headline },
   modalActionTextCancel: { ...Typography.subhead, color: Colors.textSecondary },
+  modalBottomAction: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: Colors.borderLight,
+    backgroundColor: Colors.surface,
+  },
+  modalDoneButton: {
+    backgroundColor: Colors.primary,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.xl,
+    alignItems: 'center',
+    ...Shadows.medium,
+  },
+  modalDoneButtonText: {
+    ...Typography.headline,
+    color: Colors.surface,
+  },
   
   pickerContent: {
     padding: Spacing.md,

@@ -71,7 +71,9 @@ export default function OutfitDetailsScreen() {
 
   // --- Log Wear State ---
   const [logDate, setLogDate] = useState<Date>(new Date());
+  const [logPickerKey, setLogPickerKey] = useState(0);
   const [logEvent, setLogEvent] = useState('');
+  const [showAndroidPicker, setShowAndroidPicker] = useState(false);
   const [logAudiences, setLogAudiences] = useState<string[]>([]);
   const [logAudienceInput, setLogAudienceInput] = useState('');
   const [logNotes, setLogNotes] = useState('');
@@ -425,18 +427,45 @@ export default function OutfitDetailsScreen() {
             automaticallyAdjustKeyboardInsets={true}
           >
               {/* Date Editor */}
-            <Text style={styles.editSectionTitle}>Date</Text>
             <View style={{ marginBottom: Spacing.md, alignSelf: 'flex-start' }}>
-              <DateTimePicker
-                value={logDate}
-                mode="date"
-                display="default"
-                onChange={(event, selectedDate) => {
-                  if (selectedDate) setLogDate(selectedDate);
-                }}
-                themeVariant="light"
-                style={{ marginLeft: -10 }} 
-              />
+              {Platform.OS === 'ios' ? (
+                <DateTimePicker
+                  key={`log-${logPickerKey}`}
+                  value={logDate}
+                  mode="date"
+                  display="default"
+                  onChange={(event, selectedDate) => {
+                    setLogPickerKey(prev => prev + 1);
+                    if (selectedDate && event.type === 'set') {
+                      setLogDate(selectedDate);
+                    }
+                  }}
+                  themeVariant="light"
+                  style={{ marginLeft: -10 }} 
+                />
+              ) : (
+                <>
+                  <TouchableOpacity 
+                    onPress={() => setShowAndroidPicker(true)} 
+                    style={{ backgroundColor: Colors.surface, padding: Spacing.sm, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.border }}
+                  >
+                    <Text style={{ ...Typography.body }}>{logDate.toLocaleDateString()}</Text>
+                  </TouchableOpacity>
+                  {showAndroidPicker && (
+                    <DateTimePicker
+                      value={logDate}
+                      mode="date"
+                      display="default"
+                      onChange={(event, selectedDate) => {
+                        setShowAndroidPicker(false);
+                        if (selectedDate && event.type === 'set') {
+                          setLogDate(selectedDate);
+                        }
+                      }}
+                    />
+                  )}
+                </>
+              )}
             </View>
 
             {/* Event Name */}

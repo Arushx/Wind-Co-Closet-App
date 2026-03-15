@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, StackActions } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,16 +22,21 @@ function ClosetStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="ClosetList" component={ClosetScreen} />
-      <Stack.Screen name="ItemDetail" component={ItemDetailScreen} />
+      <Stack.Screen 
+        name="ItemDetail" 
+        component={ItemDetailScreen} 
+        options={{ headerBackTitle: 'Closet' }} 
+      />
       <Stack.Screen 
         name="AddItem" 
         component={AddItemScreen} 
-        options={{ 
+        options={({ route }: any) => ({
           headerShown: true, 
-          title: 'Add Item',
+          title: route.params?.editItem ? 'Edit Item' : 'Add Item',
           headerStyle: { backgroundColor: Colors.surface },
           headerTintColor: Colors.text,
-        }} 
+          headerBackTitle: 'Closet',
+        })}
       />
     </Stack.Navigator>
   );
@@ -41,6 +46,15 @@ function ArchiveStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="ArchiveList" component={ArchiveScreen} />
+      <Stack.Screen name="OutfitDetails" component={OutfitDetailsScreen} />
+    </Stack.Navigator>
+  );
+}
+
+function SocialLogStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="SocialLogList" component={SocialLogScreen} />
       <Stack.Screen name="OutfitDetails" component={OutfitDetailsScreen} />
     </Stack.Navigator>
   );
@@ -117,11 +131,58 @@ export default function AppNavigator() {
           },
         })}
       >
-        <Tab.Screen name="DashboardTab" component={DashboardScreen} options={{ tabBarLabel: 'Home' }} />
-        <Tab.Screen name="ClosetTab" component={ClosetStack} options={{ tabBarLabel: 'Closet' }} />
-        <Tab.Screen name="OutfitBuilderTab" component={OutfitBuilderScreen} options={{ tabBarLabel: 'Create' }} />
-        <Tab.Screen name="ArchiveTab" component={ArchiveStack} options={{ tabBarLabel: 'Saved' }} />
-        <Tab.Screen name="SocialLogTab" component={SocialLogScreen} options={{ tabBarLabel: 'History' }} />
+        <Tab.Screen 
+          name="DashboardTab" 
+          component={DashboardScreen} 
+          options={{ tabBarLabel: 'Home' }} 
+        />
+        <Tab.Screen 
+          name="ClosetTab" 
+          component={ClosetStack} 
+          options={{ tabBarLabel: 'Closet' }} 
+          listeners={({ navigation }) => ({
+            blur: () => {
+              const state = navigation.getState();
+              const route = state.routes.find((r: any) => r.name === 'ClosetTab');
+              if (route && route.state && typeof route.state.index === 'number' && route.state.index > 0) {
+                navigation.dispatch(StackActions.popToTop());
+              }
+            },
+          })}
+        />
+        <Tab.Screen 
+          name="OutfitBuilderTab" 
+          component={OutfitBuilderScreen} 
+          options={{ tabBarLabel: 'Create' }} 
+        />
+        <Tab.Screen 
+          name="ArchiveTab" 
+          component={ArchiveStack} 
+          options={{ tabBarLabel: 'Saved' }} 
+          listeners={({ navigation }) => ({
+            blur: () => {
+              const state = navigation.getState();
+              const route = state.routes.find((r: any) => r.name === 'ArchiveTab');
+              if (route && route.state && typeof route.state.index === 'number' && route.state.index > 0) {
+                navigation.dispatch(StackActions.popToTop());
+              }
+            },
+          })}
+        />
+        <Tab.Screen 
+          name="SocialLogTab" 
+          component={SocialLogStack} 
+          options={{ tabBarLabel: 'History' }} 
+          listeners={({ navigation }) => ({
+            blur: () => {
+              const state = navigation.getState();
+              const route = state.routes.find((r: any) => r.name === 'SocialLogTab');
+              if (route && route.state && typeof route.state.index === 'number' && route.state.index > 0) {
+                navigation.dispatch(StackActions.popToTop());
+              }
+            },
+          })}
+        />
       </Tab.Navigator>
     </NavigationContainer>
   );

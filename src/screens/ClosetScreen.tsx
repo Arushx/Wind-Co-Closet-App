@@ -5,7 +5,6 @@ import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../theme';
 import { useCloset, ClothingItem } from '../context/ClosetContext';
 
-type ClothingCategory = 'all' | 'tops' | 'bottoms' | 'shoes' | 'accessories';
 type ClothingStatus = 'clean' | 'dirty' | 'laundry';
 
 interface ClosetScreenProps {
@@ -13,12 +12,12 @@ interface ClosetScreenProps {
 }
 
 export default function ClosetScreen({ navigation }: ClosetScreenProps) {
-  const { items, resetCloset } = useCloset();
+  const { items, categories, resetCloset } = useCloset();
   const listRef = useRef<FlatList<ClothingItem>>(null);
   const previousItemCountRef = useRef(items.length);
-  const [selectedCategory, setSelectedCategory] = useState<ClothingCategory>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedSeason, setSelectedSeason] = useState<'all' | 'spring' | 'summer' | 'fall' | 'winter'>('all');
-  const [selectedTag, setSelectedTag] = useState<string>('all');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
 
@@ -60,13 +59,27 @@ export default function ClosetScreen({ navigation }: ClosetScreenProps) {
     );
   };
 
-  const categories: { key: ClothingCategory; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }[] = [
-    { key: 'all', label: 'All', icon: 'view-grid' },
-    { key: 'tops', label: 'Tops', icon: 'tshirt-crew' },
-    { key: 'bottoms', label: 'Bottoms', icon: 'hanger' },
-    { key: 'shoes', label: 'Shoes', icon: 'shoe-sneaker' },
-    { key: 'accessories', label: 'Accessories', icon: 'bag-personal' },
-  ];
+  const getCategoryIcon = (categoryKey: string): keyof typeof MaterialCommunityIcons.glyphMap => {
+    if (categoryKey === 'all') return 'view-grid';
+    const lower = categoryKey.toLowerCase();
+    if (lower === 'tops') return 'tshirt-crew';
+    if (lower === 'bottoms') return 'hanger';
+    if (lower === 'shoes') return 'shoe-sneaker';
+    if (lower === 'accessories') return 'bag-personal';
+    return 'tag-multiple';
+  };
+
+  const dynamicCategories = useMemo(() => {
+    const list = [{ key: 'all', label: 'All', icon: getCategoryIcon('all') }];
+    categories.forEach(cat => {
+      list.push({ 
+        key: cat, 
+        label: cat.charAt(0).toUpperCase() + cat.slice(1), 
+        icon: getCategoryIcon(cat) 
+      });
+    });
+    return list;
+  }, [categories]);
 
   const seasons: { key: 'all' | 'spring' | 'summer' | 'fall' | 'winter'; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }[] = [
     { key: 'all', label: 'All Seasons', icon: 'cloud' },
@@ -80,7 +93,7 @@ export default function ClosetScreen({ navigation }: ClosetScreenProps) {
     let result = items.filter(item => {
       const categoryMatch = selectedCategory === 'all' || item.category === selectedCategory;
       const seasonMatch = selectedSeason === 'all' || (item.seasons && item.seasons.includes(selectedSeason));
-      const tagMatch = selectedTag === 'all' || (item.tags && item.tags.includes(selectedTag));
+      const tagMatch = selectedTags.length === 0 || (item.tags && item.tags.some(t => selectedTags.includes(t)));
       return categoryMatch && seasonMatch && tagMatch;
     });
 
@@ -104,7 +117,7 @@ export default function ClosetScreen({ navigation }: ClosetScreenProps) {
     }
 
     return result;
-  }, [items, selectedCategory, selectedSeason, selectedTag, searchQuery]);
+  }, [items, selectedCategory, selectedSeason, selectedTags, searchQuery]);
 
   const getStatusColor = (status: ClothingStatus) => {
     switch (status) {
@@ -200,7 +213,7 @@ export default function ClosetScreen({ navigation }: ClosetScreenProps) {
           style={styles.categoriesContainer}
           contentContainerStyle={styles.categoriesContent}
         >
-          {categories.map(category => (
+          {dynamicCategories.map(category => (
             <TouchableOpacity
               key={category.key}
               style={[
@@ -268,33 +281,40 @@ export default function ClosetScreen({ navigation }: ClosetScreenProps) {
             <TouchableOpacity
               style={[
                 styles.categoryButton,
-                selectedTag === 'all' && styles.categoryButtonActive
+                selectedTags.length === 0 && styles.categoryButtonActive
               ]}
-              onPress={() => setSelectedTag('all')}
+              onPress={() => setSelectedTags([])}
               activeOpacity={0.7}
             >
-              <Ionicons name="pricetag" size={16} color={selectedTag === 'all' ? Colors.accent : Colors.textSecondary} />
+              <Ionicons name="pricetag" size={16} color={selectedTags.length === 0 ? Colors.accent : Colors.textSecondary} />
               <Text style={[
                 styles.categoryText,
-                selectedTag === 'all' && styles.categoryTextActive
+                selectedTags.length === 0 && styles.categoryTextActive
               ]}>All Tags</Text>
             </TouchableOpacity>
-            {allTags.map(tag => (
-              <TouchableOpacity
-                key={tag}
-                style={[
-                  styles.categoryButton,
-                  selectedTag === tag && styles.categoryButtonActive
-                ]}
-                onPress={() => setSelectedTag(tag)}
-                activeOpacity={0.7}
-              >
-                <Text style={[
-                  styles.categoryText,
-                  selectedTag === tag && styles.categoryTextActive
-                ]}>{tag}</Text>
-              </TouchableOpacity>
-            ))}
+            {allTags.map(tag => {
+              const isActive = selectedTags.includes(tag);
+              return (
+                <TouchableOpacity
+                  key={tag}
+                  style={[
+                    styles.categoryButton,
+                    isActive && styles.categoryButtonActive
+                  ]}
+                  onPress={() => {
+                    setSelectedTags(prev => 
+                      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+                    );
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[
+                    styles.categoryText,
+                    isActive && styles.categoryTextActive
+                  ]}>{tag}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </ScrollView>
         )}
 

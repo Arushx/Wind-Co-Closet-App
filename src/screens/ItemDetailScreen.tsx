@@ -16,20 +16,28 @@ interface ItemDetailScreenProps {
 
 export default function ItemDetailScreen({ navigation, route }: ItemDetailScreenProps) {
   const { item } = route.params;
-  const { updateItem, deleteItem } = useCloset();
+  const { deleteItem } = useCloset();
   
-  const [name, setName] = useState(item.name);
-  const [brand, setBrand] = useState(item.brand);
-  const [category, setCategory] = useState<ClothingCategory>(item.category);
   const [status, setStatus] = useState<ClothingStatus>(item.status);
-  const [selectedSeasons, setSelectedSeasons] = useState<Season[]>(item.seasons || ['spring', 'summer', 'fall', 'winter']);
+  
+  // These are now derived directly from the passed-in item props since this screen is read-only
+  // If the user comes back from the edit screen, we want the most updated version from the closet context.
+  const { items, categories } = useCloset();
+  const currentItem = items.find(i => i.id === item.id) || item;
 
-  const categories: { key: ClothingCategory; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }[] = [
-    { key: 'tops', label: 'Tops', icon: 'tshirt-crew' },
-    { key: 'bottoms', label: 'Bottoms', icon: 'hanger' },
-    { key: 'shoes', label: 'Shoes', icon: 'shoe-sneaker' },
-    { key: 'accessories', label: 'Accessories', icon: 'bag-personal' },
-  ];
+  const { name, brand, category, seasons: selectedSeasons } = currentItem;
+
+  const getCategoryIcon = (cat: string): keyof typeof MaterialCommunityIcons.glyphMap => {
+    const lower = cat.toLowerCase();
+    if (lower === 'tops') return 'tshirt-crew';
+    if (lower === 'bottoms') return 'hanger';
+    if (lower === 'shoes') return 'shoe-sneaker';
+    if (lower === 'accessories') return 'bag-personal';
+    if (lower.includes('jacket') || lower.includes('coat')) return 'coat-rack';
+    if (lower.includes('dress')) return 'hanger';
+    if (lower.includes('hat')) return 'hat-fedora';
+    return 'hanger';
+  };
 
   const seasons: { key: Season; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }[] = [
     { key: 'spring', label: 'Spring', icon: 'flower' },
@@ -62,14 +70,6 @@ export default function ItemDetailScreen({ navigation, route }: ItemDetailScreen
     setStatus(statusOptions[nextIndex]);
   };
 
-  const toggleSeason = (season: Season) => {
-    setSelectedSeasons(prev => 
-      prev.includes(season) 
-        ? prev.filter(s => s !== season)
-        : [...prev, season]
-    );
-  };
-
   const handleDelete = () => {
     if (Platform.OS === 'web') {
       const confirmed = window.confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`);
@@ -96,17 +96,8 @@ export default function ItemDetailScreen({ navigation, route }: ItemDetailScreen
     }
   };
 
-  const handleSave = () => {
-    updateItem(item.id, {
-      name,
-      brand,
-      category,
-      status,
-      seasons: selectedSeasons,
-    });
-    Alert.alert('Success', 'Changes saved successfully', [
-      { text: 'OK', onPress: () => navigation.goBack() }
-    ]);
+  const handleEdit = () => {
+    navigation.navigate('AddItem', { editItem: currentItem });
   };
 
   return (
@@ -118,8 +109,8 @@ export default function ItemDetailScreen({ navigation, route }: ItemDetailScreen
             <Ionicons name="arrow-back" size={24} color={Colors.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Item Details</Text>
-          <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
-            <Text style={styles.saveText}>Save</Text>
+          <TouchableOpacity onPress={handleEdit} style={styles.saveButton}>
+            <Text style={styles.saveText}>Edit</Text>
           </TouchableOpacity>
         </View>
 
@@ -135,24 +126,18 @@ export default function ItemDetailScreen({ navigation, route }: ItemDetailScreen
         {/* Item Info */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>ITEM NAME</Text>
-          <TextInput
-            style={styles.input}
-            value={name}
-            onChangeText={setName}
-            placeholder="Enter item name"
-            placeholderTextColor={Colors.textMuted}
-          />
+          <View style={styles.readOnlyField}>
+            <Text style={styles.readOnlyText}>{name}</Text>
+          </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>BRAND</Text>
-          <TextInput
-            style={styles.input}
-            value={brand}
-            onChangeText={setBrand}
-            placeholder="Enter brand"
-            placeholderTextColor={Colors.textMuted}
-          />
+          <View style={styles.readOnlyField}>
+            <Text style={[styles.readOnlyText, !brand && { color: Colors.textMuted }]}>
+              {brand || 'No brand specified'}
+            </Text>
+          </View>
         </View>
 
         {/* Category */}
@@ -160,26 +145,25 @@ export default function ItemDetailScreen({ navigation, route }: ItemDetailScreen
           <Text style={styles.sectionLabel}>CATEGORY</Text>
           <View style={styles.optionsGrid}>
             {categories.map(cat => (
-              <TouchableOpacity
-                key={cat.key}
+              <View
+                key={cat}
                 style={[
                   styles.optionCard,
-                  category === cat.key && styles.optionCardActive
+                  (category || '').toLowerCase() === cat.toLowerCase() && styles.optionCardActive
                 ]}
-                onPress={() => setCategory(cat.key)}
               >
                 <MaterialCommunityIcons 
-                  name={cat.icon}
+                  name={getCategoryIcon(cat)}
                   size={24}
-                  color={category === cat.key ? Colors.accent : Colors.textSecondary}
+                  color={(category || '').toLowerCase() === cat.toLowerCase() ? Colors.accent : Colors.textSecondary}
                 />
                 <Text style={[
                   styles.optionText,
-                  category === cat.key && styles.optionTextActive
+                  (category || '').toLowerCase() === cat.toLowerCase() && styles.optionTextActive
                 ]}>
-                  {cat.label}
+                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
                 </Text>
-              </TouchableOpacity>
+              </View>
             ))}
           </View>
         </View>
@@ -209,13 +193,12 @@ export default function ItemDetailScreen({ navigation, route }: ItemDetailScreen
           <Text style={styles.sectionLabel}>SEASONS</Text>
           <View style={styles.seasonsGrid}>
             {seasons.map(season => (
-              <TouchableOpacity
+              <View
                 key={season.key}
                 style={[
                   styles.seasonCard,
                   selectedSeasons.includes(season.key) && styles.seasonCardActive
                 ]}
-                onPress={() => toggleSeason(season.key)}
               >
                 <MaterialCommunityIcons 
                   name={season.icon}
@@ -228,7 +211,7 @@ export default function ItemDetailScreen({ navigation, route }: ItemDetailScreen
                 ]}>
                   {season.label}
                 </Text>
-              </TouchableOpacity>
+              </View>
             ))}
           </View>
         </View>
@@ -314,6 +297,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
     ...Shadows.soft,
+  },
+  
+  // Read Only Text
+  readOnlyField: {
+    backgroundColor: Colors.surface,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  readOnlyText: {
+    ...Typography.body,
+    color: Colors.text,
   },
   
   // Options Grid

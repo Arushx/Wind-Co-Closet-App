@@ -3,17 +3,20 @@ import { View, Text, StyleSheet, ScrollView, Image, TextInput, TouchableOpacity,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
+import * as ImageManipulator from 'expo-image-manipulator';
+import { Buffer } from 'buffer';
+import jpeg from 'jpeg-js';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../theme';
 import { useCloset } from '../context/ClosetContext';
 
-type ClothingCategory = 'tops' | 'bottoms' | 'shoes' | 'accessories';
 type Season = 'spring' | 'summer' | 'fall' | 'winter';
 
 type DraftItem = {
   id: string;
   name: string;
   brand: string;
-  category: ClothingCategory;
+  category: string;
   selectedSeasons: Season[];
   imageUri: string;
   color: string;
@@ -23,10 +26,11 @@ type DraftItem = {
 
 interface AddItemScreenProps {
   navigation: any;
+  route?: any;
 }
 
-export default function AddItemScreen({ navigation }: AddItemScreenProps) {
-  const { items, addItems } = useCloset();
+export default function AddItemScreen({ navigation, route }: AddItemScreenProps) {
+  const { items, categories, addItems, updateItem, addCategory, deleteCategory } = useCloset();
   
   const [draftItems, setDraftItems] = useState<DraftItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -35,31 +39,89 @@ export default function AddItemScreen({ navigation }: AddItemScreenProps) {
   const [maxTempInput, setMaxTempInput] = useState('25');
   const [minTempNegative, setMinTempNegative] = useState(false);
   const [maxTempNegative, setMaxTempNegative] = useState(false);
+  const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
   const toastOpacity = useRef(new Animated.Value(0)).current;
   const [showToast, setShowToast] = useState(false);
 
   const currentItem = draftItems[currentIndex] || null;
 
-  const normalizeTemperature = (value: string, isNegative: boolean) => {
+  useEffect(() => {
+    if (route?.params?.editItem) {
+      const editItem = route.params.editItem;
+      setDraftItems([{
+        id: editItem.id,
+        name: editItem.name,
+        brand: editItem.brand || '',
+        category: editItem.category,
+        selectedSeasons: editItem.seasons || [],
+        imageUri: editItem.imageUrl,
+        color: editItem.color,
+        tags: editItem.tags || [],
+        weatherRating: editItem.weatherRating || { minTemp: 10, maxTemp: 25 },
+      }]);
+    }
+  }, [route?.params?.editItem]);
+
+  const normalizeTemperature = (value: string) => {
     const parsed = parseInt(value, 10);
-    const absoluteValue = isNaN(parsed) ? 0 : Math.abs(parsed);
-    return isNegative ? -absoluteValue : absoluteValue;
+    return isNaN(parsed) ? 0 : Math.abs(parsed);
   };
 
   useEffect(() => {
     if (!currentItem) return;
     setMinTempInput(String(Math.abs(currentItem.weatherRating.minTemp)));
     setMaxTempInput(String(Math.abs(currentItem.weatherRating.maxTemp)));
-    setMinTempNegative(currentItem.weatherRating.minTemp < 0);
-    setMaxTempNegative(currentItem.weatherRating.maxTemp < 0);
   }, [currentIndex, currentItem?.id]);
 
-  const categories: { key: ClothingCategory; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }[] = [
-    { key: 'tops', label: 'Tops', icon: 'tshirt-crew' },
-    { key: 'bottoms', label: 'Bottoms', icon: 'hanger' },
-    { key: 'shoes', label: 'Shoes', icon: 'shoe-sneaker' },
-    { key: 'accessories', label: 'Accessories', icon: 'bag-personal' },
-  ];
+  const getCategoryIcon = (category: string): keyof typeof MaterialCommunityIcons.glyphMap => {
+    const lower = category.toLowerCase();
+    if (lower === 'tops') return 'tshirt-crew';
+    if (lower === 'bottoms') return 'hanger';
+    if (lower === 'shoes') return 'shoe-sneaker';
+    if (lower === 'accessories') return 'bag-personal';
+    return 'tag-multiple';
+  };
+
+  const handleCreateCategory = () => {
+    const trimmed = newCategoryName.trim();
+    if (trimmed) {
+      if (categories.map(c => c.toLowerCase()).includes(trimmed.toLowerCase())) {
+        Alert.alert('Duplicate Category', 'A category with this name already exists.');
+        return;
+      }
+      addCategory(trimmed);
+      if (currentItem) updateCurrentItem({ category: trimmed });
+      setNewCategoryName('');
+      setIsCategoryModalVisible(false);
+    }
+  };
+
+  const handleDeleteCategory = (category: string) => {
+    if (category.toLowerCase() === 'tops' || category.toLowerCase() === 'bottoms' || category.toLowerCase() === 'shoes' || category.toLowerCase() === 'accessories') {
+       Alert.alert('Cannot Delete', 'Default categories cannot be deleted.');
+       return;
+    }
+    const hasItems = items.some(item => item.category.toLowerCase() === category.toLowerCase());
+    if (hasItems) {
+      Alert.alert('Cannot Delete', `There are items in the ${category} category. Please move or delete them before deleting the category.`);
+      return;
+    }
+    
+    Alert.alert(
+      'Delete Category',
+      `Are you sure you want to delete the "${category}" category?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => {
+           deleteCategory(category);
+           if (currentItem?.category === category) {
+             updateCurrentItem({ category: categories[0] || 'Tops' });
+           }
+        }}
+      ]
+    );
+  };
 
   const seasons: { key: Season; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }[] = [
     { key: 'spring', label: 'Spring', icon: 'flower' },
@@ -96,21 +158,85 @@ export default function AddItemScreen({ navigation }: AddItemScreenProps) {
     updateCurrentItem({ selectedSeasons: newSeasons });
   };
 
+  const PRESET_COLORS = [
+    '#000000', '#FFFFFF', '#FF3B30', '#FF9500', '#FFCC00', 
+    '#4CD964', '#5AC8FA', '#007AFF', '#5856D6', '#FF2D55', 
+    '#8E8E93', '#A2845E', '#E5E5EA', '#00205B', '#3B5998'
+  ];
+
+  const getDominantColor = async (uri: string): Promise<string> => {
+    try {
+      const manipResult = await ImageManipulator.manipulateAsync(
+        uri,
+        [{ resize: { width: 50, height: 50 } }], // small size for speed
+        { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+      );
+      
+      if (!manipResult.base64) return PRESET_COLORS[Math.floor(Math.random() * PRESET_COLORS.length)];
+      
+      const buffer = Buffer.from(manipResult.base64, 'base64');
+      const rawImageData = jpeg.decode(buffer, { useTArray: true });
+      const pixels = rawImageData.data;
+      
+      const colorCounts: Record<string, number> = {};
+      let maxCount = 0;
+      let dominantRGB = [204, 204, 204]; // Default slightly gray
+      
+      for (let i = 0; i < pixels.length; i += 4) {
+        const r = pixels[i];
+        const g = pixels[i+1];
+        const b = pixels[i+2];
+        const a = pixels[i+3];
+
+        if (a < 125) continue; // Skip transparency
+
+        // Skip bright whites or deep blacks (typical backdrops/shadows)
+        if (r > 240 && g > 240 && b > 240) continue;
+        if (r < 25 && g < 25 && b < 25) continue;
+
+        // Group very similar shades (quantize to steps of 16)
+        const rQ = Math.round(r / 16) * 16;
+        const gQ = Math.round(g / 16) * 16;
+        const bQ = Math.round(b / 16) * 16;
+        
+        const key = `${rQ},${gQ},${bQ}`;
+        colorCounts[key] = (colorCounts[key] || 0) + 1;
+
+        if (colorCounts[key] > maxCount) {
+          maxCount = colorCounts[key];
+          dominantRGB = [rQ, gQ, bQ];
+        }
+      }
+
+      const toHex = (c: number) => {
+        const hex = Math.min(255, Math.max(0, c)).toString(16);
+        return hex.length === 1 ? '0' + hex : hex;
+      };
+
+      return `#${toHex(dominantRGB[0])}${toHex(dominantRGB[1])}${toHex(dominantRGB[2])}`.toUpperCase();
+    } catch (error) {
+      console.warn('Failed JS color extraction, falling back to random', error);
+      return PRESET_COLORS[Math.floor(Math.random() * PRESET_COLORS.length)];
+    }
+  };
+
   const processImage = async (uri: string) => {
     try {
+      const extractedColor = await getDominantColor(uri);
+
       const item: DraftItem = {
         id: Date.now().toString(),
         name: '',
         brand: '',
-        category: 'tops',
+        category: categories.length > 0 ? categories[0] : 'Tops',
         selectedSeasons: ['spring', 'summer', 'fall', 'winter'],
         imageUri: uri,
-        color: '#CCCCCC',
+        color: extractedColor,
         tags: [],
         weatherRating: { minTemp: 10, maxTemp: 25 },
       };
-      setDraftItems([item]);
-      setCurrentIndex(0);
+      setDraftItems(prev => [...prev, item]);
+      setCurrentIndex(draftItems.length); // Switch to the newly added item
     } catch (e) {
       console.log('Failed to process image', e);
     }
@@ -126,8 +252,7 @@ export default function AddItemScreen({ navigation }: AddItemScreenProps) {
 
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
+      allowsEditing: false, 
       quality: 0.8,
     });
 
@@ -146,8 +271,7 @@ export default function AddItemScreen({ navigation }: AddItemScreenProps) {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
+      allowsEditing: false,
       quality: 0.8,
     });
 
@@ -159,8 +283,11 @@ export default function AddItemScreen({ navigation }: AddItemScreenProps) {
   const handleSave = () => {
     if (draftItems.length === 0) return;
 
-    const normalizedMin = normalizeTemperature(minTempInput, minTempNegative);
-    const normalizedMax = normalizeTemperature(maxTempInput, maxTempNegative);
+    const normalizedMin = normalizeTemperature(minTempInput);
+    let normalizedMax = normalizeTemperature(maxTempInput);
+    if (normalizedMax < normalizedMin) {
+      normalizedMax = normalizedMin;
+    }
 
     const newClothingItems = draftItems.map((item, index) => {
       const weatherRating = index === currentIndex
@@ -170,7 +297,7 @@ export default function AddItemScreen({ navigation }: AddItemScreenProps) {
       return {
         id: item.id,
         name: item.name.trim() || defaultName,
-        brand: item.brand.trim() || 'Unknown',
+        brand: item.brand.trim(),
         category: item.category,
         color: item.color || '#CCCCCC',
         weatherRating,
@@ -181,19 +308,32 @@ export default function AddItemScreen({ navigation }: AddItemScreenProps) {
       };
     });
 
-    // Check for duplicates
-    for (const draft of newClothingItems) {
-       const isDuplicate = items.some(item => 
-         item.name.toLowerCase() === draft.name.toLowerCase() && 
-         item.category === draft.category
-       );
-       if (isDuplicate) {
-          Alert.alert('Duplicate Item Detected', `An item named "${draft.name}" already exists in your ${draft.category}. Please rename it to something unique or delete it.`);
-          return;
-       }
+    if (route?.params?.editItem) {
+      // Edit Mode
+      updateItem(route.params.editItem.id, {
+        name: newClothingItems[0].name,
+        brand: newClothingItems[0].brand,
+        category: newClothingItems[0].category,
+        color: newClothingItems[0].color,
+        weatherRating: newClothingItems[0].weatherRating,
+        imageUrl: newClothingItems[0].imageUrl,
+        seasons: newClothingItems[0].seasons,
+        tags: newClothingItems[0].tags,
+      });
+    } else {
+      // Check for duplicates only on new add
+      for (const draft of newClothingItems) {
+         const isDuplicate = items.some(item => 
+           item.name.toLowerCase() === draft.name.toLowerCase() && 
+           item.category === draft.category
+         );
+         if (isDuplicate) {
+            Alert.alert('Duplicate Item Detected', `An item named "${draft.name}" already exists in your ${draft.category}. Please rename it to something unique or delete it.`);
+            return;
+         }
+      }
+      addItems(newClothingItems);
     }
-
-    addItems(newClothingItems);
 
     setShowToast(true);
     Animated.sequence([
@@ -202,7 +342,13 @@ export default function AddItemScreen({ navigation }: AddItemScreenProps) {
       Animated.timing(toastOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
     ]).start(() => {
       setShowToast(false);
-      navigation.goBack();
+      
+      if (route?.params?.editItem) {
+        // Go back to the ItemDetail wrapper after edit
+        navigation.goBack();
+      } else {
+        navigation.goBack();
+      }
     });
   };
   return (
@@ -323,29 +469,37 @@ export default function AddItemScreen({ navigation }: AddItemScreenProps) {
 
             {/* Category Selection */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Category *</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.sm }}>
+                <Text style={styles.sectionTitle}>Category *</Text>
+                <TouchableOpacity onPress={() => setIsCategoryModalVisible(true)}>
+                  <Text style={{ ...Typography.subhead, color: Colors.primary, fontWeight: '600' }}>+ New Category</Text>
+                </TouchableOpacity>
+              </View>
               <View style={styles.categoryGrid}>
                 {categories.map((cat) => (
                   <TouchableOpacity
-                    key={cat.key}
+                    key={cat}
                     style={[
                       styles.categoryCard,
-                      currentItem.category === cat.key && styles.categoryCardSelected,
+                      (currentItem.category || '').toLowerCase() === cat.toLowerCase() && styles.categoryCardSelected,
                     ]}
-                    onPress={() => updateCurrentItem({ category: cat.key })}
+                    onPress={() => updateCurrentItem({ category: cat })}
+                    onLongPress={() => handleDeleteCategory(cat)}
+                    delayLongPress={500}
                   >
                     <MaterialCommunityIcons
-                      name={cat.icon}
+                      name={getCategoryIcon(cat)}
                       size={28}
-                      color={currentItem.category === cat.key ? Colors.accent : Colors.textSecondary}
+                      color={(currentItem.category || '').toLowerCase() === cat.toLowerCase() ? Colors.accent : Colors.textSecondary}
                     />
                     <Text
                       style={[
                         styles.categoryText,
-                        currentItem.category === cat.key && styles.categoryTextSelected,
+                        (currentItem.category || '').toLowerCase() === cat.toLowerCase() && styles.categoryTextSelected,
                       ]}
+                      numberOfLines={1}
                     >
-                      {cat.label}
+                      {cat.charAt(0).toUpperCase() + cat.slice(1)}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -390,10 +544,29 @@ export default function AddItemScreen({ navigation }: AddItemScreenProps) {
               
               <View style={{ marginBottom: Spacing.md }}>
                 <Text style={styles.label}>Dominant Color</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm }}>
-                  <View style={{ width: 36, height: 36, borderRadius: BorderRadius.md, backgroundColor: currentItem.color, borderWidth: 1, borderColor: Colors.border }} />
-                  <Text style={{ ...Typography.body, color: Colors.textSecondary }}>{currentItem.color}</Text>
+                <Text style={styles.sectionSubtitle}>Tap a preset below to set the item's color.</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.sm }}>
+                  <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: currentItem.color, borderWidth: 1, borderColor: Colors.border, marginRight: Spacing.sm }} />
+                  <Text style={{ ...Typography.body, color: Colors.text }}>{currentItem.color.toUpperCase()}</Text>
                 </View>
+
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: Spacing.sm, paddingVertical: Spacing.xs }}>
+                  {PRESET_COLORS.map(colorHex => (
+                    <TouchableOpacity
+                      key={colorHex}
+                      style={{
+                        width: 40, 
+                        height: 40, 
+                        borderRadius: 20, 
+                        backgroundColor: colorHex, 
+                        borderWidth: currentItem.color === colorHex ? 3 : 1,
+                        borderColor: currentItem.color === colorHex ? Colors.primary : Colors.border,
+                        ...Shadows.card
+                      }}
+                      onPress={() => updateCurrentItem({ color: colorHex })}
+                    />
+                  ))}
+                </ScrollView>
               </View>
 
               <View>
@@ -401,82 +574,52 @@ export default function AddItemScreen({ navigation }: AddItemScreenProps) {
                 <Text style={styles.sectionSubtitle}>Ideal temperature range for this item</Text>
                 <View style={{ flexDirection: 'row', gap: Spacing.sm, alignItems: 'center' }}>
                   <View style={styles.temperatureInputGroup}>
-                    <TouchableOpacity
-                      style={[styles.temperatureSignButton, minTempNegative && styles.temperatureSignButtonActive]}
-                      onPress={() => {
-                        const nextValue = !minTempNegative;
-                        setMinTempNegative(nextValue);
-                        updateCurrentItem({
-                          weatherRating: {
-                            ...currentItem.weatherRating,
-                            minTemp: normalizeTemperature(minTempInput, nextValue),
-                          },
-                        });
-                      }}
-                    >
-                      <Text style={[styles.temperatureSignText, minTempNegative && styles.temperatureSignTextActive]}>
-                        {minTempNegative ? '-' : ''}
-                      </Text>
-                    </TouchableOpacity>
                     <TextInput
-                      style={[styles.input, styles.temperatureValueInput]}
+                      style={[styles.input, styles.temperatureValueInput, { borderTopLeftRadius: BorderRadius.md, borderBottomLeftRadius: BorderRadius.md }]}
                       keyboardType="numeric"
                       value={minTempInput}
                       onChangeText={(val) => {
-                        if (/^\d*$/.test(val)) {
-                          setMinTempInput(val);
-                        }
+                        if (/^\d*$/.test(val)) setMinTempInput(val);
                       }}
                       onEndEditing={() => {
-                        const value = normalizeTemperature(minTempInput, minTempNegative);
+                        const newMin = normalizeTemperature(minTempInput);
+                        const currentMax = normalizeTemperature(maxTempInput);
+                        const newMax = newMin > currentMax ? newMin : currentMax;
+                        
                         updateCurrentItem({
                           weatherRating: {
                             ...currentItem.weatherRating,
-                            minTemp: value,
+                            minTemp: newMin,
+                            maxTemp: newMax,
                           },
                         });
-                        setMinTempInput(String(Math.abs(value)));
+                        setMinTempInput(String(newMin));
+                        setMaxTempInput(String(newMax));
                       }}
                       placeholder="Min"
                     />
                   </View>
                   <Text style={{ ...Typography.body, color: Colors.textMuted }}>to</Text>
                   <View style={styles.temperatureInputGroup}>
-                    <TouchableOpacity
-                      style={[styles.temperatureSignButton, maxTempNegative && styles.temperatureSignButtonActive]}
-                      onPress={() => {
-                        const nextValue = !maxTempNegative;
-                        setMaxTempNegative(nextValue);
-                        updateCurrentItem({
-                          weatherRating: {
-                            ...currentItem.weatherRating,
-                            maxTemp: normalizeTemperature(maxTempInput, nextValue),
-                          },
-                        });
-                      }}
-                    >
-                      <Text style={[styles.temperatureSignText, maxTempNegative && styles.temperatureSignTextActive]}>
-                        {maxTempNegative ? '-' : ''}
-                      </Text>
-                    </TouchableOpacity>
                     <TextInput
-                      style={[styles.input, styles.temperatureValueInput]}
+                      style={[styles.input, styles.temperatureValueInput, { borderTopLeftRadius: BorderRadius.md, borderBottomLeftRadius: BorderRadius.md }]}
                       keyboardType="numeric"
                       value={maxTempInput}
                       onChangeText={(val) => {
-                        if (/^\d*$/.test(val)) {
-                          setMaxTempInput(val);
-                        }
+                        if (/^\d*$/.test(val)) setMaxTempInput(val);
                       }}
                       onEndEditing={() => {
-                        const value = normalizeTemperature(maxTempInput, maxTempNegative);
+                        let newMax = normalizeTemperature(maxTempInput);
+                        const currentMin = normalizeTemperature(minTempInput);
+                        if (newMax < currentMin) newMax = currentMin;
+
                         updateCurrentItem({
                           weatherRating: {
                             ...currentItem.weatherRating,
-                            maxTemp: value,
+                            maxTemp: newMax,
                           },
                         });
-                        setMaxTempInput(String(Math.abs(value)));
+                        setMaxTempInput(String(newMax));
                       }}
                       placeholder="Max"
                     />
@@ -536,7 +679,12 @@ export default function AddItemScreen({ navigation }: AddItemScreenProps) {
             >
               <MaterialCommunityIcons name="content-save-outline" size={24} color="#FFF" />
               <Text style={styles.mainSaveButtonText}>
-                {draftItems.length > 1 ? `Save All ${draftItems.length} Items to Closet` : 'Save Item to Closet'}
+                {route?.params?.editItem 
+                  ? 'Save Changes' 
+                  : draftItems.length > 1 
+                    ? `Save All ${draftItems.length} Items to Closet` 
+                    : 'Save Item to Closet'
+                }
               </Text>
             </TouchableOpacity>
           </>
@@ -544,6 +692,45 @@ export default function AddItemScreen({ navigation }: AddItemScreenProps) {
 
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* New Category Modal */}
+      {isCategoryModalVisible && (
+        <View style={styles.modalOverlay}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>New Category</Text>
+              <TouchableOpacity onPress={() => { setIsCategoryModalVisible(false); setNewCategoryName(''); }}>
+                <Ionicons name="close" size={24} color={Colors.text} />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.modalBody}>
+              <Text style={styles.label}>Category Name</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={newCategoryName}
+                onChangeText={setNewCategoryName}
+                placeholder="e.g. Dresses, Outerwear..."
+                placeholderTextColor={Colors.textSecondary}
+                autoFocus
+                returnKeyType="done"
+                onSubmitEditing={handleCreateCategory}
+              />
+            </View>
+            <View style={styles.modalFooter}>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.modalButtonSecondary]} 
+                onPress={() => { setIsCategoryModalVisible(false); setNewCategoryName(''); }}
+              >
+                <Text style={styles.modalButtonSecondaryText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalButton} onPress={handleCreateCategory}>
+                <Text style={styles.modalButtonText}>Create</Text>
+              </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      )}
+
     </SafeAreaView>
   );
 }
@@ -786,5 +973,73 @@ const styles = StyleSheet.create({
     ...Typography.headline,
     color: '#FFF',
     fontSize: 16,
+  },
+  
+  // Modal Styles
+  modalOverlay: {
+    position: 'absolute',
+    top: 0, bottom: 0, left: 0, right: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.lg,
+    zIndex: 1000,
+  },
+  modalContent: {
+    width: '100%',
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.xl,
+    overflow: 'hidden',
+    ...Shadows.medium,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: Spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderLight,
+  },
+  modalTitle: {
+    ...Typography.headline,
+  },
+  modalBody: {
+    padding: Spacing.lg,
+  },
+  modalInput: {
+    ...Typography.body,
+    backgroundColor: Colors.background,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    color: Colors.text,
+    marginTop: Spacing.xs,
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    padding: Spacing.lg,
+    paddingTop: 0,
+    gap: Spacing.md,
+  },
+  modalButton: {
+    flex: 1,
+    backgroundColor: Colors.primary,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    alignItems: 'center',
+  },
+  modalButtonSecondary: {
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  modalButtonText: {
+    ...Typography.headline,
+    color: '#FFF',
+  },
+  modalButtonSecondaryText: {
+    ...Typography.headline,
+    color: Colors.textSecondary,
   },
 });

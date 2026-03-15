@@ -25,26 +25,59 @@ const OutfitCard = ({ outfit }: { outfit: Outfit }) => {
       activeOpacity={0.8}
       onPress={() => navigation.navigate('OutfitDetails', { outfit })}
     >
-      {/* 2x2 Image Grid */}
+      {/* Image Grid */}
       <View style={styles.imageGrid}>
-        <View style={styles.imageRow}>
-          {outfit.images[0] ? (
-            <Image source={{ uri: outfit.images[0] }} style={[styles.image, styles.imageTopLeft]} resizeMode="contain" />
-          ) : <View style={[styles.image, styles.imageTopLeft, styles.emptyImage]} />}
-          
-          {outfit.images[1] ? (
-            <Image source={{ uri: outfit.images[1] }} style={[styles.image, styles.imageTopRight]} resizeMode="contain" />
-          ) : <View style={[styles.image, styles.imageTopRight, styles.emptyImage]} />}
-        </View>
-        <View style={styles.imageRow}>
-          {outfit.images[2] ? (
-            <Image source={{ uri: outfit.images[2] }} style={[styles.image, styles.imageBottomLeft]} resizeMode="contain" />
-          ) : <View style={[styles.image, styles.imageBottomLeft, styles.emptyImage]} />}
-          
-          {outfit.images[3] ? (
-            <Image source={{ uri: outfit.images[3] }} style={[styles.image, styles.imageBottomRight]} resizeMode="contain" />
-          ) : <View style={[styles.image, styles.imageBottomRight, styles.emptyImage]} />}
-        </View>
+        {outfit.images.length > 4 ? (
+          <>
+            <View style={styles.imageRow}>
+              {outfit.images[0] ? (
+                <Image source={{ uri: outfit.images[0] }} style={[styles.image, styles.imageTopLeft]} resizeMode="contain" />
+              ) : <View style={[styles.image, styles.imageTopLeft, styles.emptyImage]} />}
+              
+              {outfit.images[1] ? (
+                <Image source={{ uri: outfit.images[1] }} style={[styles.image]} resizeMode="contain" />
+              ) : <View style={[styles.image, styles.emptyImage]} />}
+
+              {outfit.images[2] ? (
+                <Image source={{ uri: outfit.images[2] }} style={[styles.image, styles.imageTopRight]} resizeMode="contain" />
+              ) : <View style={[styles.image, styles.imageTopRight, styles.emptyImage]} />}
+            </View>
+            <View style={styles.imageRow}>
+              {outfit.images[3] ? (
+                <Image source={{ uri: outfit.images[3] }} style={[styles.image, styles.imageBottomLeft]} resizeMode="contain" />
+              ) : <View style={[styles.image, styles.imageBottomLeft, styles.emptyImage]} />}
+              
+              {outfit.images[4] ? (
+                <Image source={{ uri: outfit.images[4] }} style={[styles.image]} resizeMode="contain" />
+              ) : <View style={[styles.image, styles.emptyImage]} />}
+
+              {outfit.images[5] ? (
+                <Image source={{ uri: outfit.images[5] }} style={[styles.image, styles.imageBottomRight]} resizeMode="contain" />
+              ) : <View style={[styles.image, styles.imageBottomRight, styles.emptyImage]} />}
+            </View>
+          </>
+        ) : (
+          <>
+            <View style={styles.imageRow}>
+              {outfit.images[0] ? (
+                <Image source={{ uri: outfit.images[0] }} style={[styles.image, styles.imageTopLeft]} resizeMode="contain" />
+              ) : <View style={[styles.image, styles.imageTopLeft, styles.emptyImage]} />}
+              
+              {outfit.images[1] ? (
+                <Image source={{ uri: outfit.images[1] }} style={[styles.image, styles.imageTopRight]} resizeMode="contain" />
+              ) : <View style={[styles.image, styles.imageTopRight, styles.emptyImage]} />}
+            </View>
+            <View style={styles.imageRow}>
+              {outfit.images[2] ? (
+                <Image source={{ uri: outfit.images[2] }} style={[styles.image, styles.imageBottomLeft]} resizeMode="contain" />
+              ) : <View style={[styles.image, styles.imageBottomLeft, styles.emptyImage]} />}
+              
+              {outfit.images[3] ? (
+                <Image source={{ uri: outfit.images[3] }} style={[styles.image, styles.imageBottomRight]} resizeMode="contain" />
+              ) : <View style={[styles.image, styles.imageBottomRight, styles.emptyImage]} />}
+            </View>
+          </>
+        )}
       </View>
 
       {/* Outfit Details */}

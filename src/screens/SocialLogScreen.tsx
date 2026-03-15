@@ -27,6 +27,8 @@ export default function SocialLogScreen() {
   const [endDate, setEndDate] = useState<Date | null>(null);
   
   // Internal modal state for datetime pickers
+  const [startPickerKey, setStartPickerKey] = useState(0);
+  const [endPickerKey, setEndPickerKey] = useState(0);
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
 
@@ -34,6 +36,8 @@ export default function SocialLogScreen() {
   const [isGlobalLogModalVisible, setIsGlobalLogModalVisible] = useState(false);
   const [logSelectedOutfitId, setLogSelectedOutfitId] = useState<string | null>(null);
   const [logDate, setLogDate] = useState<Date>(new Date());
+  const [logPickerKey, setLogPickerKey] = useState(0);
+  const [showAndroidLogPicker, setShowAndroidLogPicker] = useState(false);
   const [logEvent, setLogEvent] = useState('');
   const [logAudiences, setLogAudiences] = useState<string[]>([]);
   const [logAudienceInput, setLogAudienceInput] = useState('');
@@ -224,7 +228,7 @@ export default function SocialLogScreen() {
           
           <TouchableOpacity 
             style={styles.eventCard}
-            onPress={() => navigation.navigate('ArchiveTab', { screen: 'OutfitDetails', params: { outfit: { id: item.outfitId } } })}
+            onPress={() => navigation.navigate('OutfitDetails', { outfit: { id: item.outfitId } })}
             activeOpacity={0.8}
           >
             {/* Header: Event Name */}
@@ -408,11 +412,13 @@ export default function SocialLogScreen() {
               <Text style={styles.datePickerLabel}>Start Date</Text>
               {Platform.OS === 'ios' ? (
                 <DateTimePicker
+                  key={`start-${startPickerKey}`}
                   value={startDate || new Date()}
                   mode="date"
                   display="default"
                   onChange={(event, date) => {
-                    if (date) {
+                    setStartPickerKey(prev => prev + 1);
+                    if (date && event.type === 'set') {
                       const normalized = new Date(date);
                       normalized.setUTCHours(0, 0, 0, 0);
                       setStartDate(normalized);
@@ -449,11 +455,13 @@ export default function SocialLogScreen() {
               <Text style={styles.datePickerLabel}>End Date</Text>
               {Platform.OS === 'ios' ? (
                 <DateTimePicker
+                  key={`end-${endPickerKey}`}
                   value={endDate || new Date()}
                   mode="date"
                   display="default"
                   onChange={(event, date) => {
-                    if (date) {
+                    setEndPickerKey(prev => prev + 1);
+                    if (date && event.type === 'set') {
                       const normalized = new Date(date);
                       normalized.setUTCHours(0, 0, 0, 0);
                       setEndDate(normalized);
@@ -559,16 +567,42 @@ export default function SocialLogScreen() {
               {/* Date Editor */}
               <Text style={styles.filterSectionTitle}>Date</Text>
               <View style={{ marginBottom: Spacing.md, alignSelf: 'flex-start' }}>
-                <DateTimePicker
-                  value={logDate}
-                  mode="date"
-                  display="default"
-                  onChange={(event, selectedDate) => {
-                    if (selectedDate) setLogDate(selectedDate);
-                  }}
-                  themeVariant="light"
-                  style={{ marginLeft: -10 }} 
-                />
+                {Platform.OS === 'ios' ? (
+                  <DateTimePicker
+                    key={`log-${logPickerKey}`}
+                    value={logDate}
+                    mode="date"
+                    display="default"
+                    onChange={(event, selectedDate) => {
+                      setLogPickerKey(prev => prev + 1);
+                      if (selectedDate && event.type === 'set') setLogDate(selectedDate);
+                    }}
+                    themeVariant="light"
+                    style={{ marginLeft: -10 }} 
+                  />
+                ) : (
+                  <>
+                    <TouchableOpacity 
+                      onPress={() => setShowAndroidLogPicker(true)} 
+                      style={{ backgroundColor: Colors.surface, padding: Spacing.sm, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.border }}
+                    >
+                      <Text style={{ ...Typography.body }}>{logDate.toLocaleDateString()}</Text>
+                    </TouchableOpacity>
+                    {showAndroidLogPicker && (
+                      <DateTimePicker
+                        value={logDate}
+                        mode="date"
+                        display="default"
+                        onChange={(event, selectedDate) => {
+                          setShowAndroidLogPicker(false);
+                          if (selectedDate && event.type === 'set') {
+                            setLogDate(selectedDate);
+                          }
+                        }}
+                      />
+                    )}
+                  </>
+                )}
               </View>
 
               {/* Event Name */}

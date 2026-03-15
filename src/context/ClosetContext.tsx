@@ -2,7 +2,6 @@ import React, { createContext, useState, useContext, ReactNode, useEffect } from
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from 'react-native';
 
-type ClothingCategory = 'tops' | 'bottoms' | 'shoes' | 'accessories';
 type ClothingStatus = 'clean' | 'dirty' | 'laundry';
 type Season = 'spring' | 'summer' | 'fall' | 'winter';
 
@@ -15,7 +14,7 @@ export interface ClothingItem {
   id: string;
   name: string;
   brand: string;
-  category: ClothingCategory;
+  category: string;
   color: string;
   weatherRating?: WeatherRating;
   status: ClothingStatus;
@@ -26,10 +25,13 @@ export interface ClothingItem {
 
 interface ClosetContextType {
   items: ClothingItem[];
+  categories: string[];
   updateItem: (id: string, updates: Partial<ClothingItem>) => void;
   deleteItem: (id: string) => void;
   addItem: (item: ClothingItem) => void;
   addItems: (items: ClothingItem[]) => void;
+  addCategory: (name: string) => void;
+  deleteCategory: (name: string) => void;
   resetCloset: () => Promise<void>;
 }
 
@@ -334,16 +336,18 @@ const INITIAL_ITEMS: ClothingItem[] = [
 
 export function ClosetProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<ClothingItem[]>(applyLocalImageOverrides(INITIAL_ITEMS));
+  const [categories, setCategories] = useState<string[]>(['Tops', 'Bottoms', 'Shoes', 'Accessories']);
   const [isLoaded, setIsLoaded] = useState(false);
   const CLOSET_STORAGE_KEY = '@wind_co_closet_items_v2';
+  const CATEGORIES_STORAGE_KEY = '@wind_co_closet_categories';
 
   useEffect(() => {
-    const loadItems = async () => {
+    const loadData = async () => {
       try {
-        const stored = await AsyncStorage.getItem(CLOSET_STORAGE_KEY);
-        if (stored !== null) {
-          const parsedItems = JSON.parse(stored);
-          // If storage is empty or invalid, use initial items
+        // Load items
+        const storedItems = await AsyncStorage.getItem(CLOSET_STORAGE_KEY);
+        if (storedItems !== null) {
+          const parsedItems = JSON.parse(storedItems);
           if (Array.isArray(parsedItems) && parsedItems.length > 0) {
             setItems(applyLocalImageOverrides(parsedItems));
           } else {
@@ -351,18 +355,26 @@ export function ClosetProvider({ children }: { children: ReactNode }) {
             setItems(applyLocalImageOverrides(INITIAL_ITEMS));
           }
         } else {
-          // No storage found, use initial items
           console.log('No storage found, using initial items');
           setItems(applyLocalImageOverrides(INITIAL_ITEMS));
         }
+
+        // Load categories
+        const storedCategories = await AsyncStorage.getItem(CATEGORIES_STORAGE_KEY);
+        if (storedCategories !== null) {
+          const parsedCategories = JSON.parse(storedCategories);
+          if (Array.isArray(parsedCategories) && parsedCategories.length > 0) {
+             setCategories(parsedCategories);
+          }
+        }
       } catch (e) {
-        console.error('Failed to load closet items', e);
+        console.error('Failed to load closet data', e);
         setItems(applyLocalImageOverrides(INITIAL_ITEMS));
       } finally {
         setIsLoaded(true);
       }
     };
-    loadItems();
+    loadData();
   }, []);
 
   useEffect(() => {
@@ -370,6 +382,12 @@ export function ClosetProvider({ children }: { children: ReactNode }) {
       AsyncStorage.setItem(CLOSET_STORAGE_KEY, JSON.stringify(items)).catch(console.error);
     }
   }, [items, isLoaded]);
+
+  useEffect(() => {
+    if (isLoaded) {
+      AsyncStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(categories)).catch(console.error);
+    }
+  }, [categories, isLoaded]);
 
   const updateItem = (id: string, updates: Partial<ClothingItem>) => {
     setItems(prevItems =>
@@ -391,18 +409,31 @@ export function ClosetProvider({ children }: { children: ReactNode }) {
     setItems(prevItems => [...newItems, ...prevItems]);
   };
 
+  const addCategory = (name: string) => {
+    setCategories(prev => {
+       if (prev.map(c => c.toLowerCase()).includes(name.toLowerCase())) return prev;
+       return [...prev, name];
+    });
+  };
+
+  const deleteCategory = (name: string) => {
+    setCategories(prev => prev.filter(c => c.toLowerCase() !== name.toLowerCase()));
+  };
+
   const resetCloset = async () => {
     try {
       await AsyncStorage.removeItem(CLOSET_STORAGE_KEY);
+      await AsyncStorage.removeItem(CATEGORIES_STORAGE_KEY);
       setItems(applyLocalImageOverrides(INITIAL_ITEMS));
-      console.log('Closet reset to initial items');
+      setCategories(['Tops', 'Bottoms', 'Shoes', 'Accessories']);
+      console.log('Closet reset to initial items and categories');
     } catch (e) {
       console.error('Failed to reset closet', e);
     }
   };
 
   return (
-    <ClosetContext.Provider value={{ items, updateItem, deleteItem, addItem, addItems, resetCloset }}>
+    <ClosetContext.Provider value={{ items, categories, updateItem, deleteItem, addItem, addItems, addCategory, deleteCategory, resetCloset }}>
       {children}
     </ClosetContext.Provider>
   );
