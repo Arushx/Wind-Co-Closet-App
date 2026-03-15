@@ -116,7 +116,7 @@ export default function AddItemScreen({ navigation, route }: AddItemScreenProps)
         { text: 'Delete', style: 'destructive', onPress: () => {
            deleteCategory(category);
            if (currentItem?.category === category) {
-             updateCurrentItem({ category: categories[0] || 'Tops' });
+             updateCurrentItem({ category: categories[0] || 'tops' });
            }
         }}
       ]
@@ -228,7 +228,7 @@ export default function AddItemScreen({ navigation, route }: AddItemScreenProps)
         id: Date.now().toString(),
         name: '',
         brand: '',
-        category: categories.length > 0 ? categories[0] : 'Tops',
+        category: categories.length > 0 ? categories[0] : 'tops',
         selectedSeasons: ['spring', 'summer', 'fall', 'winter'],
         imageUri: uri,
         color: extractedColor,

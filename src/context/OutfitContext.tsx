@@ -25,6 +25,28 @@ export interface Outfit {
 
 const INITIAL_OUTFITS: Outfit[] = [];
 
+export const DEFAULT_WEAR_EVENT = 'Event';
+
+const padDatePart = (value: number) => value.toString().padStart(2, '0');
+
+export const formatWearDate = (date: Date) => (
+  `${date.getFullYear()}-${padDatePart(date.getMonth() + 1)}-${padDatePart(date.getDate())}`
+);
+
+export const parseWearDate = (value: string) => {
+  const matchedDate = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (matchedDate) {
+    const [, year, month, day] = matchedDate;
+    return new Date(Number(year), Number(month) - 1, Number(day));
+  }
+
+  return new Date(value);
+};
+
+export const normalizeWearDate = (date: Date) => (
+  new Date(date.getFullYear(), date.getMonth(), date.getDate())
+);
+
 export const SEASONS = ['Spring', 'Summer', 'Fall', 'Winter'];
 
 interface OutfitContextType {

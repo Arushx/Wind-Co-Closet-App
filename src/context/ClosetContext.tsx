@@ -87,6 +87,25 @@ const applyLocalImageOverrides = (items: ClothingItem[]): ClothingItem[] =>
     imageUrl: LOCAL_IMAGE_BY_ID[item.id] || item.imageUrl,
   }));
 
+const DEFAULT_CATEGORIES = ['tops', 'bottoms', 'shoes', 'accessories'];
+
+const normalizeCategoryKey = (value: string) => value.trim().toLowerCase();
+
+const normalizeItems = (items: ClothingItem[]): ClothingItem[] =>
+  items.map(item => ({
+    ...item,
+    category: normalizeCategoryKey(item.category),
+  }));
+
+const normalizeCategories = (categories: string[]): string[] => {
+  const normalized = categories
+    .map(category => normalizeCategoryKey(category))
+    .filter(Boolean);
+
+  const merged = [...DEFAULT_CATEGORIES, ...normalized];
+  return merged.filter((category, index) => merged.indexOf(category) === index);
+};
+
 const INITIAL_ITEMS: ClothingItem[] = [
   // Tops
   {
@@ -336,7 +355,7 @@ const INITIAL_ITEMS: ClothingItem[] = [
 
 export function ClosetProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<ClothingItem[]>(applyLocalImageOverrides(INITIAL_ITEMS));
-  const [categories, setCategories] = useState<string[]>(['Tops', 'Bottoms', 'Shoes', 'Accessories']);
+  const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
   const [isLoaded, setIsLoaded] = useState(false);
   const CLOSET_STORAGE_KEY = '@wind_co_closet_items_v2';
   const CATEGORIES_STORAGE_KEY = '@wind_co_closet_categories';
@@ -349,7 +368,7 @@ export function ClosetProvider({ children }: { children: ReactNode }) {
         if (storedItems !== null) {
           const parsedItems = JSON.parse(storedItems);
           if (Array.isArray(parsedItems) && parsedItems.length > 0) {
-            setItems(applyLocalImageOverrides(parsedItems));
+            setItems(applyLocalImageOverrides(normalizeItems(parsedItems)));
           } else {
             console.log('Storage empty, using initial items');
             setItems(applyLocalImageOverrides(INITIAL_ITEMS));
@@ -364,7 +383,7 @@ export function ClosetProvider({ children }: { children: ReactNode }) {
         if (storedCategories !== null) {
           const parsedCategories = JSON.parse(storedCategories);
           if (Array.isArray(parsedCategories) && parsedCategories.length > 0) {
-             setCategories(parsedCategories);
+             setCategories(normalizeCategories(parsedCategories));
           }
         }
       } catch (e) {
@@ -392,7 +411,13 @@ export function ClosetProvider({ children }: { children: ReactNode }) {
   const updateItem = (id: string, updates: Partial<ClothingItem>) => {
     setItems(prevItems =>
       prevItems.map(item =>
-        item.id === id ? { ...item, ...updates } : item
+        item.id === id
+          ? {
+              ...item,
+              ...updates,
+              category: updates.category ? normalizeCategoryKey(updates.category) : item.category,
+            }
+          : item
       )
     );
   };
@@ -402,22 +427,24 @@ export function ClosetProvider({ children }: { children: ReactNode }) {
   };
 
   const addItem = (item: ClothingItem) => {
-    setItems(prevItems => [item, ...prevItems]);
+    setItems(prevItems => [{ ...item, category: normalizeCategoryKey(item.category) }, ...prevItems]);
   };
 
   const addItems = (newItems: ClothingItem[]) => {
-    setItems(prevItems => [...newItems, ...prevItems]);
+    setItems(prevItems => [...normalizeItems(newItems), ...prevItems]);
   };
 
   const addCategory = (name: string) => {
+    const normalizedName = normalizeCategoryKey(name);
     setCategories(prev => {
-       if (prev.map(c => c.toLowerCase()).includes(name.toLowerCase())) return prev;
-       return [...prev, name];
+       if (!normalizedName || prev.includes(normalizedName)) return prev;
+       return [...prev, normalizedName];
     });
   };
 
   const deleteCategory = (name: string) => {
-    setCategories(prev => prev.filter(c => c.toLowerCase() !== name.toLowerCase()));
+    const normalizedName = normalizeCategoryKey(name);
+    setCategories(prev => prev.filter(c => c !== normalizedName));
   };
 
   const resetCloset = async () => {
@@ -425,7 +452,7 @@ export function ClosetProvider({ children }: { children: ReactNode }) {
       await AsyncStorage.removeItem(CLOSET_STORAGE_KEY);
       await AsyncStorage.removeItem(CATEGORIES_STORAGE_KEY);
       setItems(applyLocalImageOverrides(INITIAL_ITEMS));
-      setCategories(['Tops', 'Bottoms', 'Shoes', 'Accessories']);
+      setCategories(DEFAULT_CATEGORIES);
       console.log('Closet reset to initial items and categories');
     } catch (e) {
       console.error('Failed to reset closet', e);

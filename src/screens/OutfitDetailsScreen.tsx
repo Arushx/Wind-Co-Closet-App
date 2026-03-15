@@ -5,8 +5,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../theme';
-import { useOutfitContext, Outfit, SEASONS } from '../context/OutfitContext';
+import { useOutfitContext, Outfit, SEASONS, DEFAULT_WEAR_EVENT, formatWearDate, parseWearDate } from '../context/OutfitContext';
 import { useLocationSearch } from '../hooks/useLocationSearch';
+
+const mergeAudienceInput = (audiences: string[], pendingInput: string) => {
+  const trimmed = pendingInput.trim();
+  if (!trimmed || audiences.includes(trimmed)) return audiences;
+  return [...audiences, trimmed];
+};
 
 export default function OutfitDetailsScreen() {
   const navigation = useNavigation<any>();
@@ -122,18 +128,19 @@ export default function OutfitDetailsScreen() {
   };
 
   const handleSaveLogWear = () => {
+    const finalizedAudiences = mergeAudienceInput(logAudiences, logAudienceInput);
+
     const newHistoryItem = {
       id: `wh${Date.now()}`,
-      // Parse the standard React zero-indexed date to ISO 8601 YYYY-MM-DD
-      date: logDate.toISOString().split('T')[0],
-      event: logEvent || 'Everyday Outfit',
-      audiences: logAudiences,
+      date: formatWearDate(logDate),
+      event: logEvent.trim() || DEFAULT_WEAR_EVENT,
+      audiences: finalizedAudiences,
       notes: logNotes.trim() === '' ? undefined : logNotes.trim(),
       location: logLocation.trim() === '' ? undefined : logLocation.trim(),
     };
 
     if (saveAsDefaultAudience && logEvent.trim()) {
-      updateEventDefaults(logEvent.trim(), logAudiences);
+      updateEventDefaults(logEvent.trim(), finalizedAudiences);
     }
 
     updateOutfit({
@@ -277,7 +284,7 @@ export default function OutfitDetailsScreen() {
                   <View style={styles.historyCardHeader}>
                     <Ionicons name="calendar" size={20} color={Colors.primarySoft} />
                     <Text style={styles.historyDate}>
-                      {new Date(item.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' })}
+                      {parseWearDate(item.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' })}
                     </Text>
                   </View>
                   <Text style={styles.historyEvent}>{item.event}</Text>
@@ -473,7 +480,7 @@ export default function OutfitDetailsScreen() {
             <View style={styles.tagInputContainer}>
               <TextInput
                 style={styles.tagInput}
-                placeholder="e.g. Birthday Dinner, Work Mtg..."
+                placeholder={DEFAULT_WEAR_EVENT}
                 placeholderTextColor={Colors.textMuted}
                 value={logEvent}
                 onChangeText={handleEventChange}

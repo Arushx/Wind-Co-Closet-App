@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, Modal, Scrol
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../theme';
-import { useOutfitContext, Outfit, WearHistoryItem } from '../context/OutfitContext';
+import { useOutfitContext, Outfit, WearHistoryItem, DEFAULT_WEAR_EVENT, formatWearDate, normalizeWearDate, parseWearDate } from '../context/OutfitContext';
 import { useLocationSearch } from '../hooks/useLocationSearch';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -14,6 +14,12 @@ interface TimelineEvent extends WearHistoryItem {
   outfitName: string;
   outfitImage: string;
 }
+
+const mergeAudienceInput = (audiences: string[], pendingInput: string) => {
+  const trimmed = pendingInput.trim();
+  if (!trimmed || audiences.includes(trimmed)) return audiences;
+  return [...audiences, trimmed];
+};
 
 export default function SocialLogScreen() {
   const { outfits, allEvents, allAudiences } = useOutfitContext();
@@ -101,17 +107,19 @@ export default function SocialLogScreen() {
     const targetOutfit = outfits.find(o => o.id === logSelectedOutfitId);
     if (!targetOutfit) return;
 
+    const finalizedAudiences = mergeAudienceInput(logAudiences, logAudienceInput);
+
     const newHistoryItem = {
       id: `wh${Date.now()}`,
-      date: logDate.toISOString().split('T')[0],
-      event: logEvent || 'Everyday Outfit',
-      audiences: logAudiences,
+      date: formatWearDate(logDate),
+      event: logEvent.trim() || DEFAULT_WEAR_EVENT,
+      audiences: finalizedAudiences,
       notes: logNotes.trim() === '' ? undefined : logNotes.trim(),
       location: logLocation.trim() === '' ? undefined : logLocation.trim(),
     };
 
     if (saveAsDefaultAudience && logEvent.trim()) {
-      updateEventDefaults(logEvent.trim(), logAudiences);
+      updateEventDefaults(logEvent.trim(), finalizedAudiences);
     }
 
     updateOutfit({
@@ -154,21 +162,19 @@ export default function SocialLogScreen() {
 
     if (startDate) {
       allEventsArr = allEventsArr.filter(e => {
-        const d = new Date(e.date);
-        d.setUTCHours(0, 0, 0, 0); // Normalize to start of day
+        const d = normalizeWearDate(parseWearDate(e.date));
         return d >= startDate;
       });
     }
 
     if (endDate) {
       allEventsArr = allEventsArr.filter(e => {
-        const d = new Date(e.date);
-        d.setUTCHours(0, 0, 0, 0); // Normalize to start of day
+        const d = normalizeWearDate(parseWearDate(e.date));
         return d <= endDate;
       });
     }
 
-    return allEventsArr.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return allEventsArr.sort((a, b) => parseWearDate(b.date).getTime() - parseWearDate(a.date).getTime());
   }, [outfits, selectedEvents, selectedAudiences, startDate, endDate]);
 
   const toggleEventFilter = (event: string) => {
@@ -197,7 +203,7 @@ export default function SocialLogScreen() {
     // Format the date
     let dateStr = 'Unknown Date';
     try {
-      const d = new Date(item.date);
+      const d = parseWearDate(item.date);
       dateStr = d.toLocaleDateString(undefined, {
         weekday: 'short',
         month: 'short',
@@ -420,8 +426,7 @@ export default function SocialLogScreen() {
                     setStartPickerKey(prev => prev + 1);
                     if (date && event.type === 'set') {
                       const normalized = new Date(date);
-                      normalized.setUTCHours(0, 0, 0, 0);
-                      setStartDate(normalized);
+                      setStartDate(normalizeWearDate(normalized));
                     }
                   }}
                   style={styles.iosDatePicker}
@@ -442,8 +447,7 @@ export default function SocialLogScreen() {
                     setShowStartPicker(false);
                     if (event.type === 'set' && date) {
                       const normalized = new Date(date);
-                      normalized.setUTCHours(0, 0, 0, 0);
-                      setStartDate(normalized);
+                      setStartDate(normalizeWearDate(normalized));
                     }
                   }}
                 />
@@ -463,8 +467,7 @@ export default function SocialLogScreen() {
                     setEndPickerKey(prev => prev + 1);
                     if (date && event.type === 'set') {
                       const normalized = new Date(date);
-                      normalized.setUTCHours(0, 0, 0, 0);
-                      setEndDate(normalized);
+                      setEndDate(normalizeWearDate(normalized));
                     }
                   }}
                   style={styles.iosDatePicker}
@@ -485,8 +488,7 @@ export default function SocialLogScreen() {
                     setShowEndPicker(false);
                     if (event.type === 'set' && date) {
                       const normalized = new Date(date);
-                      normalized.setUTCHours(0, 0, 0, 0);
-                      setEndDate(normalized);
+                      setEndDate(normalizeWearDate(normalized));
                     }
                   }}
                 />
@@ -610,7 +612,7 @@ export default function SocialLogScreen() {
               <View style={styles.tagInputContainer}>
                 <TextInput
                   style={styles.tagInput}
-                  placeholder="e.g. Birthday Dinner, Work Mtg..."
+                  placeholder={DEFAULT_WEAR_EVENT}
                   placeholderTextColor={Colors.textMuted}
                   value={logEvent}
                   onChangeText={handleGlobalEventChange}

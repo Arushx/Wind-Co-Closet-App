@@ -135,7 +135,8 @@ export default function OutfitBuilderScreen() {
 
   const availableItemsForActiveSlot = useMemo(() => {
     if (!activeSlot) return [];
-    let filtered = items.filter(i => i.category === activeSlot);
+    const normalizedSlot = activeSlot.toLowerCase();
+    let filtered = items.filter(i => i.category.toLowerCase() === normalizedSlot);
     if (pickerSearch.trim()) {
       const q = pickerSearch.toLowerCase().trim();
       filtered = filtered.filter(i => i.name.toLowerCase().includes(q) || i.brand.toLowerCase().includes(q));
@@ -159,15 +160,59 @@ export default function OutfitBuilderScreen() {
     return 'winter';
   };
 
+  const overlapsWeatherRange = (
+    item: ClothingItem,
+    range: { min24h: number; max24h: number }
+  ) => {
+    if (!item.weatherRating) return false;
+    return item.weatherRating.minTemp <= range.max24h && item.weatherRating.maxTemp >= range.min24h;
+  };
+
+  const getWeatherMismatchScore = (
+    item: ClothingItem,
+    range: { min24h: number; max24h: number }
+  ) => {
+    if (!item.weatherRating) return Number.POSITIVE_INFINITY;
+
+    // Penalize items that are clearly outside today's temperature window.
+    const tooColdPenalty = Math.max(0, item.weatherRating.minTemp - range.max24h);
+    const tooWarmPenalty = Math.max(0, range.min24h - item.weatherRating.maxTemp);
+
+    // Mild tiebreaker so among suitable items we favor closest comfort midpoint.
+    const itemMid = (item.weatherRating.minTemp + item.weatherRating.maxTemp) / 2;
+    const dayMid = (range.min24h + range.max24h) / 2;
+    const midpointPenalty = Math.abs(itemMid - dayMid) * 0.05;
+
+    return tooColdPenalty * 4 + tooWarmPenalty * 4 + midpointPenalty;
+  };
+
   const handleShuffle = () => {
     const currentSeason = getCurrentSeason();
     const newPieces: Record<string, ClothingItem[]> = {};
     categories.forEach(cat => { newPieces[cat] = []; });
     
     categories.forEach(category => {
-      let candidates = items.filter(i => i.category === category && i.status === 'clean');
+      let candidates = items.filter(i => i.category.toLowerCase() === category.toLowerCase() && i.status === 'clean');
       if (weatherShuffle) {
-        candidates = candidates.filter(i => i.seasons && i.seasons.includes(currentSeason as any));
+        if (weatherRange) {
+          const weatherMatched = candidates.filter(i => overlapsWeatherRange(i, weatherRange));
+
+          if (weatherMatched.length > 0) {
+            candidates = weatherMatched;
+          } else {
+            // If no perfect match exists, choose from least-mismatched items instead of random picks.
+            const scored = [...candidates]
+              .map(item => ({ item, score: getWeatherMismatchScore(item, weatherRange) }))
+              .sort((a, b) => a.score - b.score);
+            const bestScore = scored[0]?.score;
+            candidates = bestScore === undefined
+              ? []
+              : scored.filter(entry => entry.score === bestScore).map(entry => entry.item);
+          }
+        } else {
+          // Fallback if weather API data isn't available yet.
+          candidates = candidates.filter(i => i.seasons && i.seasons.includes(currentSeason as any));
+        }
       }
       if (candidates.length > 0) {
         newPieces[category] = [candidates[Math.floor(Math.random() * candidates.length)]];
