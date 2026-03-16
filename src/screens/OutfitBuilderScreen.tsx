@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, Modal, KeyboardAvoidingView, Platform, Alert, Switch, Animated, Dimensions } from 'react-native';
+import type { ImageSourcePropType } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../theme';
@@ -102,6 +103,33 @@ export default function OutfitBuilderScreen() {
   const [pickerSearch, setPickerSearch] = useState('');
   const toastOpacity = useRef(new Animated.Value(0)).current;
   const [showToast, setShowToast] = useState(false);
+
+  const getImageSource = (value: unknown): ImageSourcePropType | null => {
+    if (typeof value === 'number') {
+      return value;
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) return null;
+
+      // Some older payloads can persist local asset IDs as numeric strings.
+      if (/^\d+$/.test(trimmed)) {
+        return Number(trimmed);
+      }
+
+      return { uri: trimmed };
+    }
+
+    if (value && typeof value === 'object' && 'uri' in value) {
+      const uri = (value as { uri?: unknown }).uri;
+      if (typeof uri === 'string' && uri.trim().length > 0) {
+        return { uri: uri.trim() };
+      }
+    }
+
+    return null;
+  };
 
   const openPicker = (slot: string) => {
     setActiveSlot(slot);
@@ -349,7 +377,13 @@ export default function OutfitBuilderScreen() {
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.slotItemsScroll}>
                     {slotItems.map(item => (
                       <View key={item.id} style={styles.selectedItemCard}>
-                        <Image source={typeof item.imageUrl === 'string' ? { uri: item.imageUrl } : item.imageUrl} style={styles.slotImage} resizeMode="contain" />
+                        {getImageSource(item.imageUrl) ? (
+                          <Image source={getImageSource(item.imageUrl)!} style={styles.slotImage} resizeMode="contain" />
+                        ) : (
+                          <View style={styles.imageFallback}>
+                            <Ionicons name="image-outline" size={22} color={Colors.textMuted} />
+                          </View>
+                        )}
                         <TouchableOpacity style={styles.removeSlotBtn} onPress={() => clearSlotItem(slot, item.id)}>
                           <Ionicons name="close-circle" size={24} color={Colors.surface} />
                         </TouchableOpacity>
@@ -536,7 +570,13 @@ export default function OutfitBuilderScreen() {
                         style={[styles.pickerItemCard, (activeSlot && (pieces[activeSlot] || []).some(i => i.id === item.id)) && styles.pickerItemCardSelected]}
                         onPress={() => selectItemForSlot(item)}
                       >
-                        <Image source={typeof item.imageUrl === 'string' ? { uri: item.imageUrl } : item.imageUrl} style={styles.pickerItemImage} resizeMode="contain" />
+                        {getImageSource(item.imageUrl) ? (
+                          <Image source={getImageSource(item.imageUrl)!} style={styles.pickerItemImage} resizeMode="contain" />
+                        ) : (
+                          <View style={styles.imageFallback}>
+                            <Ionicons name="image-outline" size={22} color={Colors.textMuted} />
+                          </View>
+                        )}
                         <Text style={styles.pickerItemName} numberOfLines={1}>{item.name}</Text>
                         {(activeSlot && (pieces[activeSlot] || []).some(i => i.id === item.id)) && (
                           <View style={styles.selectedOverlay}>
@@ -626,7 +666,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: BorderRadius.xl,
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.surfaceWarm,
     ...Shadows.card,
     overflow: 'hidden',
   },
@@ -828,6 +868,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 2,
     borderColor: 'transparent',
+    backgroundColor: Colors.surfaceWarm,
   },
   pickerItemCardSelected: {
     borderColor: Colors.mint,
@@ -835,6 +876,13 @@ const styles = StyleSheet.create({
   pickerItemImage: {
     width: '100%',
     height: '100%',
+  },
+  imageFallback: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.surfaceWarm,
   },
   selectedOverlay: {
     ...StyleSheet.absoluteFillObject,
