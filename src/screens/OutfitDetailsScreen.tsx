@@ -247,7 +247,7 @@ export default function OutfitDetailsScreen() {
               return (
                 <View key={index} style={styles.pieceCard}>
                   <View style={styles.pieceImageContainer}>
-                    <Image source={{ uri: imageUrl }} style={styles.pieceImage} resizeMode="contain" />
+                    <Image source={typeof imageUrl === 'string' ? { uri: imageUrl } : imageUrl} style={styles.pieceImage} resizeMode="contain" />
                   </View>
                   <View style={styles.pieceLabelContainer}>
                     <Text style={styles.pieceLabel} numberOfLines={2}>{piece}</Text>

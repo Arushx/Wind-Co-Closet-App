@@ -143,7 +143,7 @@ export default function ClosetScreen({ navigation }: ClosetScreenProps) {
     >
       <View style={styles.itemImageContainer}>
         <Image 
-          source={{ uri: item.imageUrl }}
+          source={typeof item.imageUrl === 'string' ? { uri: item.imageUrl } : item.imageUrl}
           style={styles.itemImage}
           resizeMode="cover"
         />

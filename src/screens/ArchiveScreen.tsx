@@ -31,28 +31,28 @@ const OutfitCard = ({ outfit }: { outfit: Outfit }) => {
           <>
             <View style={styles.imageRow}>
               {outfit.images[0] ? (
-                <Image source={{ uri: outfit.images[0] }} style={[styles.image, styles.imageTopLeft]} resizeMode="contain" />
+                <Image source={typeof outfit.images[0] === 'string' ? { uri: outfit.images[0] } : outfit.images[0]} style={[styles.image, styles.imageTopLeft]} resizeMode="contain" />
               ) : <View style={[styles.image, styles.imageTopLeft, styles.emptyImage]} />}
               
               {outfit.images[1] ? (
-                <Image source={{ uri: outfit.images[1] }} style={[styles.image]} resizeMode="contain" />
+                <Image source={typeof outfit.images[1] === 'string' ? { uri: outfit.images[1] } : outfit.images[1]} style={[styles.image]} resizeMode="contain" />
               ) : <View style={[styles.image, styles.emptyImage]} />}
 
               {outfit.images[2] ? (
-                <Image source={{ uri: outfit.images[2] }} style={[styles.image, styles.imageTopRight]} resizeMode="contain" />
+                <Image source={typeof outfit.images[2] === 'string' ? { uri: outfit.images[2] } : outfit.images[2]} style={[styles.image, styles.imageTopRight]} resizeMode="contain" />
               ) : <View style={[styles.image, styles.imageTopRight, styles.emptyImage]} />}
             </View>
             <View style={styles.imageRow}>
               {outfit.images[3] ? (
-                <Image source={{ uri: outfit.images[3] }} style={[styles.image, styles.imageBottomLeft]} resizeMode="contain" />
+                <Image source={typeof outfit.images[3] === 'string' ? { uri: outfit.images[3] } : outfit.images[3]} style={[styles.image, styles.imageBottomLeft]} resizeMode="contain" />
               ) : <View style={[styles.image, styles.imageBottomLeft, styles.emptyImage]} />}
               
               {outfit.images[4] ? (
-                <Image source={{ uri: outfit.images[4] }} style={[styles.image]} resizeMode="contain" />
+                <Image source={typeof outfit.images[4] === 'string' ? { uri: outfit.images[4] } : outfit.images[4]} style={[styles.image]} resizeMode="contain" />
               ) : <View style={[styles.image, styles.emptyImage]} />}
 
               {outfit.images[5] ? (
-                <Image source={{ uri: outfit.images[5] }} style={[styles.image, styles.imageBottomRight]} resizeMode="contain" />
+                <Image source={typeof outfit.images[5] === 'string' ? { uri: outfit.images[5] } : outfit.images[5]} style={[styles.image, styles.imageBottomRight]} resizeMode="contain" />
               ) : <View style={[styles.image, styles.imageBottomRight, styles.emptyImage]} />}
             </View>
           </>
@@ -60,20 +60,20 @@ const OutfitCard = ({ outfit }: { outfit: Outfit }) => {
           <>
             <View style={styles.imageRow}>
               {outfit.images[0] ? (
-                <Image source={{ uri: outfit.images[0] }} style={[styles.image, styles.imageTopLeft]} resizeMode="contain" />
+                <Image source={typeof outfit.images[0] === 'string' ? { uri: outfit.images[0] } : outfit.images[0]} style={[styles.image, styles.imageTopLeft]} resizeMode="contain" />
               ) : <View style={[styles.image, styles.imageTopLeft, styles.emptyImage]} />}
               
               {outfit.images[1] ? (
-                <Image source={{ uri: outfit.images[1] }} style={[styles.image, styles.imageTopRight]} resizeMode="contain" />
+                <Image source={typeof outfit.images[1] === 'string' ? { uri: outfit.images[1] } : outfit.images[1]} style={[styles.image, styles.imageTopRight]} resizeMode="contain" />
               ) : <View style={[styles.image, styles.imageTopRight, styles.emptyImage]} />}
             </View>
             <View style={styles.imageRow}>
               {outfit.images[2] ? (
-                <Image source={{ uri: outfit.images[2] }} style={[styles.image, styles.imageBottomLeft]} resizeMode="contain" />
+                <Image source={typeof outfit.images[2] === 'string' ? { uri: outfit.images[2] } : outfit.images[2]} style={[styles.image, styles.imageBottomLeft]} resizeMode="contain" />
               ) : <View style={[styles.image, styles.imageBottomLeft, styles.emptyImage]} />}
               
               {outfit.images[3] ? (
-                <Image source={{ uri: outfit.images[3] }} style={[styles.image, styles.imageBottomRight]} resizeMode="contain" />
+                <Image source={typeof outfit.images[3] === 'string' ? { uri: outfit.images[3] } : outfit.images[3]} style={[styles.image, styles.imageBottomRight]} resizeMode="contain" />
               ) : <View style={[styles.image, styles.imageBottomRight, styles.emptyImage]} />}
             </View>
           </>

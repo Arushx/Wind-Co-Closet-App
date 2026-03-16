@@ -275,7 +275,7 @@ export default function SocialLogScreen() {
 
               {/* Outfit Preview Row */}
               <View style={styles.outfitPreviewRow}>
-                <Image source={{ uri: item.outfitImage }} style={styles.outfitThumb} />
+                <Image source={typeof item.outfitImage === 'string' ? { uri: item.outfitImage } : item.outfitImage} style={styles.outfitThumb} />
                 <View style={styles.outfitInfoCol}>
                   <Text style={styles.outfitLabel}>Outfit Worn</Text>
                   <Text style={styles.outfitName} numberOfLines={1}>{item.outfitName}</Text>
@@ -551,7 +551,7 @@ export default function SocialLogScreen() {
                       onPress={() => setLogSelectedOutfitId(outfit.id)}
                       activeOpacity={0.8}
                     >
-                      <Image source={{ uri: outfit.images[0] || 'https://via.placeholder.com/150' }} style={styles.globalOutfitSelectImage} />
+                      <Image source={typeof outfit.images[0] === 'string' ? { uri: outfit.images[0] } : (outfit.images[0] || 'https://via.placeholder.com/150')} style={styles.globalOutfitSelectImage} />
                       <View style={styles.globalOutfitSelectLabelWrap}>
                         <Text style={[styles.globalOutfitSelectLabel, isSelected && { color: Colors.primary, fontWeight: '600' }]} numberOfLines={1}>{outfit.name}</Text>
                       </View>

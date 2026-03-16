@@ -65,13 +65,13 @@ export default function AddItemScreen({ navigation, route }: AddItemScreenProps)
 
   const normalizeTemperature = (value: string) => {
     const parsed = parseInt(value, 10);
-    return isNaN(parsed) ? 0 : Math.abs(parsed);
+    return isNaN(parsed) ? 0 : parsed;
   };
 
   useEffect(() => {
     if (!currentItem) return;
-    setMinTempInput(String(Math.abs(currentItem.weatherRating.minTemp)));
-    setMaxTempInput(String(Math.abs(currentItem.weatherRating.maxTemp)));
+    setMinTempInput(String(currentItem.weatherRating.minTemp));
+    setMaxTempInput(String(currentItem.weatherRating.maxTemp));
   }, [currentIndex, currentItem?.id]);
 
   const getCategoryIcon = (category: string): keyof typeof MaterialCommunityIcons.glyphMap => {
@@ -370,7 +370,7 @@ export default function AddItemScreen({ navigation, route }: AddItemScreenProps)
           {draftItems.length > 0 ? (
             <View style={styles.imagePreviewContainer}>
               <View style={{ width: '100%', aspectRatio: 1, borderRadius: BorderRadius.lg, backgroundColor: Colors.border, overflow: 'hidden' }}>
-                <Image source={{ uri: currentItem?.imageUri }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
+                <Image source={typeof currentItem?.imageUri === 'string' ? { uri: currentItem?.imageUri } : currentItem?.imageUri} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
               </View>
 
               {draftItems.length > 1 && (
@@ -385,7 +385,7 @@ export default function AddItemScreen({ navigation, route }: AddItemScreenProps)
                         onPress={() => setCurrentIndex(idx)} 
                         style={[styles.thumbnailButton, currentIndex === idx && styles.thumbnailButtonActive]}
                       >
-                        <Image source={{ uri: draft.imageUri }} style={styles.thumbnailImage} resizeMode="contain" />
+                        <Image source={typeof draft.imageUri === 'string' ? { uri: draft.imageUri } : draft.imageUri} style={styles.thumbnailImage} resizeMode="contain" />
                       </TouchableOpacity>
                     ))}
                   </ScrollView>
@@ -576,10 +576,10 @@ export default function AddItemScreen({ navigation, route }: AddItemScreenProps)
                   <View style={styles.temperatureInputGroup}>
                     <TextInput
                       style={[styles.input, styles.temperatureValueInput, { borderTopLeftRadius: BorderRadius.md, borderBottomLeftRadius: BorderRadius.md }]}
-                      keyboardType="numeric"
+                      keyboardType="numbers-and-punctuation"
                       value={minTempInput}
                       onChangeText={(val) => {
-                        if (/^\d*$/.test(val)) setMinTempInput(val);
+                        if (/^-?\d*$/.test(val)) setMinTempInput(val);
                       }}
                       onEndEditing={() => {
                         const newMin = normalizeTemperature(minTempInput);
@@ -603,10 +603,10 @@ export default function AddItemScreen({ navigation, route }: AddItemScreenProps)
                   <View style={styles.temperatureInputGroup}>
                     <TextInput
                       style={[styles.input, styles.temperatureValueInput, { borderTopLeftRadius: BorderRadius.md, borderBottomLeftRadius: BorderRadius.md }]}
-                      keyboardType="numeric"
+                      keyboardType="numbers-and-punctuation"
                       value={maxTempInput}
                       onChangeText={(val) => {
-                        if (/^\d*$/.test(val)) setMaxTempInput(val);
+                        if (/^-?\d*$/.test(val)) setMaxTempInput(val);
                       }}
                       onEndEditing={() => {
                         let newMax = normalizeTemperature(maxTempInput);

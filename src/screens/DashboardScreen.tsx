@@ -224,7 +224,7 @@ export default function DashboardScreen({ navigation }: any) {
                 prefillRequestId: Date.now(),
               })}
             >
-              <Image source={{ uri: suggestedItem.imageUrl }} style={styles.suggestionImg} resizeMode="contain" />
+              <Image source={typeof suggestedItem.imageUrl === 'string' ? { uri: suggestedItem.imageUrl } : suggestedItem.imageUrl} style={styles.suggestionImg} resizeMode="contain" />
               <View style={styles.suggestionInfo}>
                 <Text style={styles.suggestionName}>{suggestedItem.name}</Text>
                 <Text style={styles.suggestionBrand}>{suggestedItem.brand}</Text>
@@ -262,7 +262,7 @@ export default function DashboardScreen({ navigation }: any) {
                 <TouchableOpacity key={outfit.id} style={styles.outfitCard} onPress={() => navigation.navigate('ArchiveTab')}>
                   <View style={styles.outfitImagesGrid}>
                     {outfit.images.slice(0,4).map((img, i) => (
-                      <Image key={i} source={{ uri: img }} style={styles.outfitGridImg} resizeMode="contain" />
+                      <Image key={i} source={typeof img === 'string' ? { uri: img } : img} style={styles.outfitGridImg} resizeMode="contain" />
                     ))}
                   </View>
                   <Text style={styles.outfitName} numberOfLines={1}>{outfit.name}</Text>

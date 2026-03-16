@@ -349,7 +349,7 @@ export default function OutfitBuilderScreen() {
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.slotItemsScroll}>
                     {slotItems.map(item => (
                       <View key={item.id} style={styles.selectedItemCard}>
-                        <Image source={{ uri: item.imageUrl }} style={styles.slotImage} resizeMode="contain" />
+                        <Image source={typeof item.imageUrl === 'string' ? { uri: item.imageUrl } : item.imageUrl} style={styles.slotImage} resizeMode="contain" />
                         <TouchableOpacity style={styles.removeSlotBtn} onPress={() => clearSlotItem(slot, item.id)}>
                           <Ionicons name="close-circle" size={24} color={Colors.surface} />
                         </TouchableOpacity>
@@ -536,7 +536,7 @@ export default function OutfitBuilderScreen() {
                         style={[styles.pickerItemCard, (activeSlot && (pieces[activeSlot] || []).some(i => i.id === item.id)) && styles.pickerItemCardSelected]}
                         onPress={() => selectItemForSlot(item)}
                       >
-                        <Image source={{ uri: item.imageUrl }} style={styles.pickerItemImage} resizeMode="contain" />
+                        <Image source={typeof item.imageUrl === 'string' ? { uri: item.imageUrl } : item.imageUrl} style={styles.pickerItemImage} resizeMode="contain" />
                         <Text style={styles.pickerItemName} numberOfLines={1}>{item.name}</Text>
                         {(activeSlot && (pieces[activeSlot] || []).some(i => i.id === item.id)) && (
                           <View style={styles.selectedOverlay}>

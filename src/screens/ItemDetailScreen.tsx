@@ -117,7 +117,7 @@ export default function ItemDetailScreen({ navigation, route }: ItemDetailScreen
         {/* Image */}
         <View style={styles.imageContainer}>
           <Image 
-            source={{ uri: item.imageUrl }}
+            source={typeof item.imageUrl === 'string' ? { uri: item.imageUrl } : item.imageUrl}
             style={styles.image}
             resizeMode="contain"
           />

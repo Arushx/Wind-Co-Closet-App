@@ -23,6 +23,8 @@ export interface ClothingItem {
   tags?: string[];
 }
 
+export const getSource = (uri: any) => typeof uri === 'string' ? { uri } : uri;
+
 interface ClosetContextType {
   items: ClothingItem[];
   categories: string[];
@@ -37,28 +39,28 @@ interface ClosetContextType {
 
 const ClosetContext = createContext<ClosetContextType | undefined>(undefined);
 
-const CLASSIC_WHITE_TSHIRT_URI = Image.resolveAssetSource(require('../../assets/closet items/classic white t-shirt.png')).uri;
-const NAVY_BLUE_HOODIE_URI = Image.resolveAssetSource(require('../../assets/closet items/navy blue hoodie.png')).uri;
-const STRIPED_SUMMER_BLOUSE_URI = Image.resolveAssetSource(require('../../assets/closet items/striped summer blouse.png')).uri;
-const BLACK_LEATHER_JACKET_URI = Image.resolveAssetSource(require('../../assets/closet items/black leather jacket.png')).uri;
-const GREEN_FLANNEL_SHIRT_URI = Image.resolveAssetSource(require('../../assets/closet items/green flannel shirt.png')).uri;
-const BLUE_DENIM_JEANS_URI = Image.resolveAssetSource(require('../../assets/closet items/blue denim jeans.png')).uri;
-const BLACK_DRESS_PANTS_URI = Image.resolveAssetSource(require('../../assets/closet items/black dress pants.png')).uri;
-const KHAKI_SHORTS_URI = Image.resolveAssetSource(require('../../assets/closet items/khaki shorts.png')).uri;
-const GRAY_SWEATPANTS_URI = Image.resolveAssetSource(require('../../assets/closet items/gray sweatpants.png')).uri;
-const PLAID_SKIRT_URI = Image.resolveAssetSource(require('../../assets/closet items/plaid skirt.png')).uri;
-const WHITE_SNEAKERS_URI = Image.resolveAssetSource(require('../../assets/closet items/white sneakers.png')).uri;
-const BROWN_LEATHER_BOOTS_URI = Image.resolveAssetSource(require('../../assets/closet items/brown leather boots.png')).uri;
-const BLACK_RUNNING_SHOES_URI = Image.resolveAssetSource(require('../../assets/closet items/black running shoes.png')).uri;
-const BEIGE_SANDALS_URI = Image.resolveAssetSource(require('../../assets/closet items/beige sandals.png')).uri;
-const GRAY_WOOL_BEANIE_URI = Image.resolveAssetSource(require('../../assets/closet items/gray wool beanie.png')).uri;
-const BLACK_LEATHER_BELT_URI = Image.resolveAssetSource(require('../../assets/closet items/black leather belt.png')).uri;
-const PATTERNED_SCARF_URI = Image.resolveAssetSource(require('../../assets/closet items/patterned scarf.png')).uri;
-const CANVAS_BACKPACK_URI = Image.resolveAssetSource(require('../../assets/closet items/canvas backpack.png')).uri;
-const AVIATOR_SUNGLASSES_URI = Image.resolveAssetSource(require('../../assets/closet items/aviator sunglasses.png')).uri;
-const RED_BASEBALL_CAP_URI = Image.resolveAssetSource(require('../../assets/closet items/red baseball cap.png')).uri;
+const CLASSIC_WHITE_TSHIRT_URI = require('../../assets/closet items/classic white t-shirt.png');
+const NAVY_BLUE_HOODIE_URI = require('../../assets/closet items/navy blue hoodie.png');
+const STRIPED_SUMMER_BLOUSE_URI = require('../../assets/closet items/striped summer blouse.png');
+const BLACK_LEATHER_JACKET_URI = require('../../assets/closet items/black leather jacket.png');
+const GREEN_FLANNEL_SHIRT_URI = require('../../assets/closet items/green flannel shirt.png');
+const BLUE_DENIM_JEANS_URI = require('../../assets/closet items/blue denim jeans.png');
+const BLACK_DRESS_PANTS_URI = require('../../assets/closet items/black dress pants.png');
+const KHAKI_SHORTS_URI = require('../../assets/closet items/khaki shorts.png');
+const GRAY_SWEATPANTS_URI = require('../../assets/closet items/gray sweatpants.png');
+const PLAID_SKIRT_URI = require('../../assets/closet items/plaid skirt.png');
+const WHITE_SNEAKERS_URI = require('../../assets/closet items/white sneakers.png');
+const BROWN_LEATHER_BOOTS_URI = require('../../assets/closet items/brown leather boots.png');
+const BLACK_RUNNING_SHOES_URI = require('../../assets/closet items/black running shoes.png');
+const BEIGE_SANDALS_URI = require('../../assets/closet items/beige sandals.png');
+const GRAY_WOOL_BEANIE_URI = require('../../assets/closet items/gray wool beanie.png');
+const BLACK_LEATHER_BELT_URI = require('../../assets/closet items/black leather belt.png');
+const PATTERNED_SCARF_URI = require('../../assets/closet items/patterned scarf.png');
+const CANVAS_BACKPACK_URI = require('../../assets/closet items/canvas backpack.png');
+const AVIATOR_SUNGLASSES_URI = require('../../assets/closet items/aviator sunglasses.png');
+const RED_BASEBALL_CAP_URI = require('../../assets/closet items/red baseball cap.png');
 
-const LOCAL_IMAGE_BY_ID: Record<string, string> = {
+const LOCAL_IMAGE_BY_ID: Record<string, any> = {
   '1': CLASSIC_WHITE_TSHIRT_URI,
   '2': NAVY_BLUE_HOODIE_URI,
   '3': STRIPED_SUMMER_BLOUSE_URI,
