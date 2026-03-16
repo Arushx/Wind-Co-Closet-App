@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, Image, 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../theme';
-import { useCloset, ClothingItem } from '../context/ClosetContext';
+import { useCloset, ClothingItem, getSource } from '../context/ClosetContext';
 
 type ClothingStatus = 'clean' | 'dirty' | 'laundry';
 
@@ -142,11 +142,17 @@ export default function ClosetScreen({ navigation }: ClosetScreenProps) {
       onPress={() => navigation.navigate('ItemDetail', { item })}
     >
       <View style={styles.itemImageContainer}>
-        <Image 
-          source={typeof item.imageUrl === 'string' ? { uri: item.imageUrl } : item.imageUrl}
-          style={styles.itemImage}
-          resizeMode="cover"
-        />
+        {getSource(item.imageUrl) ? (
+          <Image
+            source={getSource(item.imageUrl)!}
+            style={styles.itemImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={styles.itemImageFallback}>
+            <MaterialCommunityIcons name="image-off-outline" size={28} color={Colors.textMuted} />
+          </View>
+        )}
       </View>
       
       <View style={styles.itemInfo}>
@@ -449,11 +455,18 @@ const styles = StyleSheet.create({
   itemImageContainer: {
     width: '100%',
     aspectRatio: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: Colors.surfaceWarm,
   },
   itemImage: {
     width: '100%',
     height: '100%',
+  },
+  itemImageFallback: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.surfaceWarm,
   },
   itemInfo: {
     padding: Spacing.md,

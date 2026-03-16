@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Image } from 'react-native';
+import type { ImageSourcePropType } from 'react-native';
 
 type ClothingStatus = 'clean' | 'dirty' | 'laundry';
 type Season = 'spring' | 'summer' | 'fall' | 'winter';
@@ -23,7 +23,27 @@ export interface ClothingItem {
   tags?: string[];
 }
 
-export const getSource = (uri: any) => typeof uri === 'string' ? { uri } : uri;
+export const getSource = (value: unknown): ImageSourcePropType | null => {
+  if (typeof value === 'number') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    if (/^\d+$/.test(trimmed)) return Number(trimmed);
+    return { uri: trimmed };
+  }
+
+  if (value && typeof value === 'object' && 'uri' in value) {
+    const uri = (value as { uri?: unknown }).uri;
+    if (typeof uri === 'string' && uri.trim().length > 0) {
+      return { uri: uri.trim() };
+    }
+  }
+
+  return null;
+};
 
 interface ClosetContextType {
   items: ClothingItem[];
