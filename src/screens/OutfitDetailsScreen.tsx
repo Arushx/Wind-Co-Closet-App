@@ -131,7 +131,7 @@ export default function OutfitDetailsScreen() {
     const finalizedAudiences = mergeAudienceInput(logAudiences, logAudienceInput);
 
     const newHistoryItem = {
-      id: `wh${Date.now()}`,
+      id: `wh-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       date: formatWearDate(logDate),
       event: logEvent.trim() || DEFAULT_WEAR_EVENT,
       audiences: finalizedAudiences,

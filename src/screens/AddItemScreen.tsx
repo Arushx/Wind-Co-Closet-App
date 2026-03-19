@@ -452,6 +452,8 @@ export default function AddItemScreen({ navigation, route }: AddItemScreenProps)
                   onChangeText={(val) => updateCurrentItem({ name: val })}
                   placeholder={`e.g., Blue ${currentItem.category === 'tops' ? 'Shirt' : currentItem.category}`}
                   placeholderTextColor={Colors.textSecondary}
+                  autoCorrect={false}
+                  spellCheck={false}
                 />
               </View>
 
@@ -463,6 +465,8 @@ export default function AddItemScreen({ navigation, route }: AddItemScreenProps)
                   onChangeText={(val) => updateCurrentItem({ brand: val })}
                   placeholder="e.g., Levi's"
                   placeholderTextColor={Colors.textSecondary}
+                  autoCorrect={false}
+                  spellCheck={false}
                 />
               </View>
             </View>
@@ -639,6 +643,9 @@ export default function AddItemScreen({ navigation, route }: AddItemScreenProps)
                   placeholderTextColor={Colors.textMuted}
                   value={newTagInput}
                   onChangeText={setNewTagInput}
+                  autoCorrect={false}
+                  spellCheck={false}
+                  autoCapitalize="none"
                   onSubmitEditing={() => {
                     const t = newTagInput.trim();
                     if (t && !currentItem.tags.includes(t)) {
@@ -711,6 +718,8 @@ export default function AddItemScreen({ navigation, route }: AddItemScreenProps)
                 onChangeText={setNewCategoryName}
                 placeholder="e.g. Dresses, Outerwear..."
                 placeholderTextColor={Colors.textSecondary}
+                autoCorrect={false}
+                spellCheck={false}
                 autoFocus
                 returnKeyType="done"
                 onSubmitEditing={handleCreateCategory}

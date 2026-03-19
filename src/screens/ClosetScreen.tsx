@@ -1,6 +1,7 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, Image, RefreshControl, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../theme';
 import { useCloset, ClothingItem, getSource } from '../context/ClosetContext';
@@ -40,6 +41,24 @@ export default function ClosetScreen({ navigation }: ClosetScreenProps) {
     }
     previousItemCountRef.current = items.length;
   }, [items.length]);
+
+  const resetFiltersAndScrollTop = useCallback(() => {
+    setSelectedCategory('all');
+    setSelectedSeason('all');
+    setSelectedTags([]);
+    setSearchQuery('');
+
+    // Wait one frame so FlatList is ready after navigation transitions.
+    setTimeout(() => {
+      listRef.current?.scrollToOffset({ offset: 0, animated: false });
+    }, 0);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      resetFiltersAndScrollTop();
+    }, [resetFiltersAndScrollTop])
+  );
 
   const handleResetCloset = () => {
     Alert.alert(
@@ -203,6 +222,9 @@ export default function ClosetScreen({ navigation }: ClosetScreenProps) {
             placeholderTextColor={Colors.textMuted}
             value={searchQuery}
             onChangeText={setSearchQuery}
+            autoCorrect={false}
+            spellCheck={false}
+            autoCapitalize="none"
             returnKeyType="search"
           />
           {searchQuery.length > 0 && (

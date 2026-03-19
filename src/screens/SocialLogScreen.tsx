@@ -10,6 +10,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 
 // Create a unified TimelineEvent that carries the parent outfit data
 interface TimelineEvent extends WearHistoryItem {
+  timelineId: string;
   outfitId: string;
   outfitName: string;
   outfitImage: string;
@@ -110,7 +111,7 @@ export default function SocialLogScreen() {
     const finalizedAudiences = mergeAudienceInput(logAudiences, logAudienceInput);
 
     const newHistoryItem = {
-      id: `wh${Date.now()}`,
+      id: `wh-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       date: formatWearDate(logDate),
       event: logEvent.trim() || DEFAULT_WEAR_EVENT,
       audiences: finalizedAudiences,
@@ -138,9 +139,10 @@ export default function SocialLogScreen() {
     let allEventsArr: TimelineEvent[] = [];
     outfits.forEach((outfit) => {
       if (outfit.wearHistory && outfit.wearHistory.length > 0) {
-        outfit.wearHistory.forEach((wh) => {
+        outfit.wearHistory.forEach((wh, index) => {
           allEventsArr.push({
             ...wh,
+            timelineId: `${outfit.id}-${wh.id}-${index}`,
             outfitId: outfit.id,
             outfitName: outfit.name,
             outfitImage: outfit.images[0] || 'https://via.placeholder.com/150',
@@ -328,7 +330,7 @@ export default function SocialLogScreen() {
 
       <FlatList
         data={timelineEvents}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.timelineId}
         renderItem={renderTimelineItem}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
