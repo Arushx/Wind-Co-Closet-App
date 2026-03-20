@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, useWindowDimensions, Modal, TextInput, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -65,11 +65,51 @@ export default function OutfitDetailsScreen() {
 
   const addTag = (tag: string) => {
     const trimmed = tag.trim();
-    if (trimmed && !editedTags.includes(trimmed)) {
+    const exists = editedTags.some(existing => existing.toLowerCase() === trimmed.toLowerCase());
+    if (trimmed && !exists) {
       setEditedTags([...editedTags, trimmed]);
     }
     setNewTagInput('');
   };
+
+  const mostUsedUnusedTags = useMemo(() => {
+    const usage = new Map<string, number>();
+
+    outfits.forEach(o => {
+      o.tags.forEach(tag => {
+        usage.set(tag, (usage.get(tag) || 0) + 1);
+      });
+    });
+
+    return allTags
+      .filter(tag => !editedTags.includes(tag))
+      .sort((a, b) => {
+        const countDiff = (usage.get(b) || 0) - (usage.get(a) || 0);
+        if (countDiff !== 0) return countDiff;
+        return a.localeCompare(b);
+      })
+      .slice(0, 8);
+  }, [outfits, allTags, editedTags]);
+
+  const filteredUnusedTags = useMemo(() => {
+    const q = newTagInput.trim().toLowerCase();
+    if (!q) return mostUsedUnusedTags;
+
+    return allTags
+      .filter(tag => !editedTags.includes(tag) && tag.toLowerCase().includes(q))
+      .sort((a, b) => a.localeCompare(b))
+      .slice(0, 8);
+  }, [newTagInput, allTags, editedTags, mostUsedUnusedTags]);
+
+  const canCreateTypedTag = useMemo(() => {
+    const trimmed = newTagInput.trim();
+    if (!trimmed) return false;
+
+    const lower = trimmed.toLowerCase();
+    const alreadyUsed = editedTags.some(tag => tag.toLowerCase() === lower);
+    const existsInAllTags = allTags.some(tag => tag.toLowerCase() === lower);
+    return !alreadyUsed && !existsInAllTags;
+  }, [newTagInput, editedTags, allTags]);
 
   const removeTag = (tag: string) => {
     setEditedTags(editedTags.filter(t => t !== tag));
@@ -368,17 +408,33 @@ export default function OutfitDetailsScreen() {
             <View style={styles.tagInputContainer}>
               <TextInput
                 style={styles.tagInput}
-                placeholder="Add a new tag..."
+                placeholder="e.g. picnic, hangout"
                 placeholderTextColor={Colors.textMuted}
                 value={newTagInput}
                 onChangeText={setNewTagInput}
                 onSubmitEditing={() => addTag(newTagInput)}
                 returnKeyType="done"
               />
-              <TouchableOpacity style={styles.tagAddButton} onPress={() => addTag(newTagInput)}>
-                <Ionicons name="add" size={20} color={Colors.surface} />
-              </TouchableOpacity>
             </View>
+            <Text style={styles.tagHintText}>Search existing tags or type to create a new one.</Text>
+
+            {(filteredUnusedTags.length > 0 || canCreateTypedTag) && (
+              <View style={styles.tagDropdown}>
+                {canCreateTypedTag && (
+                  <TouchableOpacity style={styles.tagDropdownItem} onPress={() => addTag(newTagInput)}>
+                    <Ionicons name="add-circle-outline" size={16} color={Colors.accent} />
+                    <Text style={styles.tagDropdownText}>Use "{newTagInput.trim()}"</Text>
+                  </TouchableOpacity>
+                )}
+
+                {filteredUnusedTags.map((tag) => (
+                  <TouchableOpacity key={tag} style={styles.tagDropdownItem} onPress={() => addTag(tag)}>
+                    <Ionicons name="pricetag-outline" size={16} color={Colors.textSecondary} />
+                    <Text style={styles.tagDropdownText}>{tag}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
 
             {/* Currently Applied Tags */}
             <View style={styles.editChipsRow}>
@@ -394,9 +450,9 @@ export default function OutfitDetailsScreen() {
 
             {/* Suggested Tags */}
             <View style={styles.suggestionsContainer}>
-              <Text style={styles.editSectionSubtitle}>Suggested Tags (Tap to add)</Text>
+              <Text style={styles.editSectionSubtitle}>Most Used Presets (Tap to add)</Text>
               <View style={styles.editChipsRow}>
-                {allTags.filter((tag) => !editedTags.includes(tag)).map((tag) => (
+                {mostUsedUnusedTags.map((tag) => (
                   <TouchableOpacity key={tag} style={styles.suggestedTagChip} onPress={() => addTag(tag)}>
                     <Ionicons name="add" size={14} color={Colors.primary} style={{ marginRight: 2 }} />
                     <Text style={styles.suggestedTagText}>{tag}</Text>
@@ -913,6 +969,33 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     ...Typography.body,
     outlineStyle: 'none' as any,
+  },
+  tagHintText: {
+    ...Typography.caption,
+    color: Colors.textSecondary,
+    marginTop: -Spacing.xs,
+    marginBottom: Spacing.sm,
+  },
+  tagDropdown: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.md,
+    overflow: 'hidden',
+  },
+  tagDropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.borderLight,
+  },
+  tagDropdownText: {
+    ...Typography.subhead,
+    color: Colors.text,
   },
   tagAddButton: {
     backgroundColor: Colors.primary,

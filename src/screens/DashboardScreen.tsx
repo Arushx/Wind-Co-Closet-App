@@ -213,6 +213,35 @@ export default function DashboardScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
 
+        <View style={styles.quickLinksSection}>
+          <Text style={styles.quickLinksTitle}>Jump To</Text>
+          <View style={styles.quickLinksRow}>
+            <TouchableOpacity
+              style={styles.quickLinkBtn}
+              onPress={() => navigation.navigate('SocialLogTab', { screen: 'SocialLogList', params: { openLogWear: true, requestId: Date.now() } })}
+            >
+              <Ionicons name="add-circle-outline" size={18} color={Colors.primarySoft} />
+              <Text style={styles.quickLinkText}>Log Wear</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickLinkBtn}
+              onPress={() => navigation.navigate('SocialLogTab')}
+            >
+              <Ionicons name="time-outline" size={18} color={Colors.primarySoft} />
+              <Text style={styles.quickLinkText}>History</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickLinkBtn}
+              onPress={() => navigation.navigate('ArchiveTab')}
+            >
+              <Ionicons name="bookmark-outline" size={18} color={Colors.primarySoft} />
+              <Text style={styles.quickLinkText}>Saved</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Suggestion */}
         {suggestedItem && (
           <View style={styles.section}>
@@ -329,6 +358,38 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   actionText: { ...Typography.headline, fontSize: 16 },
+
+  quickLinksSection: {
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.xl,
+  },
+  quickLinksTitle: {
+    ...Typography.subhead,
+    fontWeight: '600',
+    marginBottom: Spacing.sm,
+    color: Colors.textSecondary,
+  },
+  quickLinksRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  quickLinkBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.full,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  quickLinkText: {
+    ...Typography.caption,
+    color: Colors.primarySoft,
+    fontWeight: '600',
+  },
 
   section: {
     marginBottom: Spacing.xl,

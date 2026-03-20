@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, Modal, ScrollView, Platform, TextInput, KeyboardAvoidingView, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../theme';
 import { useOutfitContext, Outfit, WearHistoryItem, DEFAULT_WEAR_EVENT, formatWearDate, normalizeWearDate, parseWearDate } from '../context/OutfitContext';
 import { useLocationSearch } from '../hooks/useLocationSearch';
@@ -25,6 +25,7 @@ const mergeAudienceInput = (audiences: string[], pendingInput: string) => {
 export default function SocialLogScreen() {
   const { outfits, allEvents, allAudiences } = useOutfitContext();
   const navigation = useNavigation<any>();
+  const route = useRoute<any>();
 
   // Filter State
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
@@ -32,6 +33,9 @@ export default function SocialLogScreen() {
   const [selectedAudiences, setSelectedAudiences] = useState<string[]>([]);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortMode, setSortMode] = useState<'newest' | 'oldest'>('newest');
+  const [quickRange, setQuickRange] = useState<'all' | '30d' | '90d'>('all');
   
   // Internal modal state for datetime pickers
   const [startPickerKey, setStartPickerKey] = useState(0);
@@ -81,6 +85,13 @@ export default function SocialLogScreen() {
     setSaveAsDefaultAudience(false);
     setIsGlobalLogModalVisible(true);
   };
+
+  useEffect(() => {
+    if (route.params?.openLogWear) {
+      openGlobalLogModal();
+      navigation.setParams({ openLogWear: false });
+    }
+  }, [route.params?.openLogWear, navigation]);
 
   const handleGlobalEventChange = (text: string) => {
     setLogEvent(text);
@@ -134,7 +145,8 @@ export default function SocialLogScreen() {
 
   // 1. Flatten all wear histories from every outfit into an array of TimelineEvents
   // 2. Filter based on active filter criteria
-  // 3. Sort by date in descending order (newest first)
+  // 3. Apply search and quick date range
+  // 4. Sort based on selected order
   const timelineEvents = useMemo(() => {
     let allEventsArr: TimelineEvent[] = [];
     outfits.forEach((outfit) => {
@@ -176,8 +188,30 @@ export default function SocialLogScreen() {
       });
     }
 
-    return allEventsArr.sort((a, b) => parseWearDate(b.date).getTime() - parseWearDate(a.date).getTime());
-  }, [outfits, selectedEvents, selectedAudiences, startDate, endDate]);
+    if (quickRange !== 'all') {
+      const daysBack = quickRange === '30d' ? 30 : 90;
+      const rangeStart = normalizeWearDate(new Date());
+      rangeStart.setDate(rangeStart.getDate() - daysBack);
+
+      allEventsArr = allEventsArr.filter(e => normalizeWearDate(parseWearDate(e.date)) >= rangeStart);
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      allEventsArr = allEventsArr.filter(e => {
+        const notes = e.notes || '';
+        const location = e.location || '';
+        const audienceText = (e.audiences || []).join(' ');
+        const corpus = `${e.event} ${e.outfitName} ${location} ${notes} ${audienceText}`.toLowerCase();
+        return corpus.includes(q);
+      });
+    }
+
+    return allEventsArr.sort((a, b) => {
+      const timeDiff = parseWearDate(b.date).getTime() - parseWearDate(a.date).getTime();
+      return sortMode === 'newest' ? timeDiff : -timeDiff;
+    });
+  }, [outfits, selectedEvents, selectedAudiences, startDate, endDate, searchQuery, sortMode, quickRange]);
 
   const toggleEventFilter = (event: string) => {
     setSelectedEvents(prev => 
@@ -307,25 +341,80 @@ export default function SocialLogScreen() {
               <Ionicons 
                 name={activeFilterCount > 0 ? 'options' : 'options-outline'} 
                 size={18} 
-                color={activeFilterCount > 0 ? Colors.surface : Colors.textSecondary} 
+                color={activeFilterCount > 0 ? Colors.accent : Colors.primary} 
               />
               <Text style={[styles.filterButtonText, activeFilterCount > 0 && styles.filterButtonTextActive]}>
                 Filters {activeFilterCount > 0 ? `(${activeFilterCount})` : ''}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.filterButton, { backgroundColor: Colors.primary, borderColor: Colors.primary }]} 
+              style={styles.filterButton}
               onPress={openGlobalLogModal}
               activeOpacity={0.7}
             >
-              <Ionicons name="add" size={18} color={Colors.surface} />
-              <Text style={[styles.filterButtonTextActive, { fontWeight: '600' }]}>
+              <Ionicons name="add" size={18} color={Colors.primary} />
+              <Text style={[styles.filterButtonText, { fontWeight: '600', color: Colors.primary }]}>
                 Log Wear
               </Text>
             </TouchableOpacity>
           </View>
         </View>
         <Text style={styles.headerSubtitle}>Track where and when outfits were worn, plus event, audience, and notes.</Text>
+
+        <View style={styles.searchBarWrap}>
+          <Ionicons name="search" size={16} color={Colors.textMuted} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search by outfit, event, location, audience..."
+            placeholderTextColor={Colors.textMuted}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            returnKeyType="search"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <View style={styles.quickControlsRow}>
+          <View style={styles.quickGroup}>
+            <TouchableOpacity
+              style={[styles.quickChip, sortMode === 'newest' && styles.quickChipActive]}
+              onPress={() => setSortMode('newest')}
+            >
+              <Text style={[styles.quickChipText, sortMode === 'newest' && styles.quickChipTextActive]}>Newest</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.quickChip, sortMode === 'oldest' && styles.quickChipActive]}
+              onPress={() => setSortMode('oldest')}
+            >
+              <Text style={[styles.quickChipText, sortMode === 'oldest' && styles.quickChipTextActive]}>Oldest</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.quickGroup}>
+            <TouchableOpacity
+              style={[styles.quickChip, quickRange === 'all' && styles.quickChipActive]}
+              onPress={() => setQuickRange('all')}
+            >
+              <Text style={[styles.quickChipText, quickRange === 'all' && styles.quickChipTextActive]}>All</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.quickChip, quickRange === '30d' && styles.quickChipActive]}
+              onPress={() => setQuickRange('30d')}
+            >
+              <Text style={[styles.quickChipText, quickRange === '30d' && styles.quickChipTextActive]}>30 Days</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.quickChip, quickRange === '90d' && styles.quickChipActive]}
+              onPress={() => setQuickRange('90d')}
+            >
+              <Text style={[styles.quickChipText, quickRange === '90d' && styles.quickChipTextActive]}>90 Days</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
 
       <FlatList
@@ -799,16 +888,66 @@ const styles = StyleSheet.create({
     ...Shadows.soft,
   },
   filterButtonActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
+    backgroundColor: Colors.accentSoft,
+    borderColor: Colors.accent,
   },
   filterButtonText: {
     ...Typography.subhead,
-    color: Colors.textSecondary,
+    color: Colors.primary,
     fontWeight: '600',
   },
   filterButtonTextActive: {
-    color: Colors.surface,
+    color: Colors.accent,
+  },
+  searchBarWrap: {
+    marginTop: Spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: BorderRadius.lg,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 6,
+  },
+  searchInput: {
+    flex: 1,
+    ...Typography.body,
+    color: Colors.text,
+    paddingVertical: 2,
+    outlineStyle: 'none' as any,
+  },
+  quickControlsRow: {
+    marginTop: Spacing.sm,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+  },
+  quickGroup: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.xs,
+  },
+  quickChip: {
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 6,
+    borderRadius: BorderRadius.full,
+  },
+  quickChipActive: {
+    backgroundColor: Colors.accentSoft,
+    borderColor: Colors.accent,
+  },
+  quickChipText: {
+    ...Typography.caption,
+    color: Colors.textSecondary,
+    fontWeight: '600',
+  },
+  quickChipTextActive: {
+    color: Colors.accent,
   },
   listContent: {
     paddingTop: Spacing.md,
@@ -1029,15 +1168,15 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   filterChipActive: {
-    backgroundColor: Colors.primarySoft,
-    borderColor: Colors.primary,
+    backgroundColor: Colors.accentSoft,
+    borderColor: Colors.accent,
   },
   filterChipText: {
     ...Typography.subhead,
     color: Colors.text,
   },
   filterChipTextActive: {
-    color: Colors.primary,
+    color: Colors.accent,
     fontWeight: '600',
   },
   noFilterDataText: {
